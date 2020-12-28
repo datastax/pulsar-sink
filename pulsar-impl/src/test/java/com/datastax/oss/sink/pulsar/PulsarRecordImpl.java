@@ -15,7 +15,10 @@
  */
 package com.datastax.oss.sink.pulsar;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
@@ -29,6 +32,7 @@ public class PulsarRecordImpl implements Record<GenericRecord> {
   private Long eventTime;
   private String partitionId;
   private Long recordSequence;
+  private final CompletableFuture<Object> result = new CompletableFuture<>();
 
   public PulsarRecordImpl(String topic, String key, GenericRecord value, Schema schema) {
     this(topic, key, value, schema, System.currentTimeMillis());
@@ -84,6 +88,25 @@ public class PulsarRecordImpl implements Record<GenericRecord> {
 
   public void setRecordSequence(Long recordSequence) {
     this.recordSequence = recordSequence;
+  }
+
+  @Override
+  public Map<String, String> getProperties() {
+    return Collections.emptyMap();
+  }
+
+  @Override
+  public void ack() {
+    result.complete("ok");
+  }
+
+  @Override
+  public void fail() {
+    result.completeExceptionally(new Exception("failed").fillInStackTrace());
+  }
+
+  public CompletableFuture<?> getResult() {
+    return result;
   }
 
   @Override

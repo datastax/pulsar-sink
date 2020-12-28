@@ -23,6 +23,7 @@ import static com.datastax.oss.simulacron.common.stubbing.PrimeDsl.when;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 
 import com.datastax.oss.common.sink.state.InstanceState;
@@ -40,6 +41,9 @@ import com.datastax.oss.dsbulk.tests.simulacron.SimulacronUtils;
 import com.datastax.oss.dsbulk.tests.simulacron.SimulacronUtils.Column;
 import com.datastax.oss.dsbulk.tests.simulacron.SimulacronUtils.Table;
 import com.datastax.oss.dsbulk.tests.simulacron.annotations.SimulacronConfig;
+import com.datastax.oss.protocol.internal.request.Batch;
+import com.datastax.oss.simulacron.common.cluster.QueryLog;
+import com.datastax.oss.simulacron.common.codec.ConsistencyLevel;
 import com.datastax.oss.simulacron.common.request.Query;
 import com.datastax.oss.simulacron.server.BoundCluster;
 import com.datastax.oss.sink.pulsar.GenericRecordImpl;
@@ -51,7 +55,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.client.api.schema.RecordSchemaBuilder;
@@ -416,10 +422,9 @@ class SimpleEndToEndSimulacronIT {
         .contains(
             "statement: INSERT INTO ks1.table1(a,b) VALUES (:a,:b) USING TIMESTAMP :kafka_internal_timestamp");
     InstanceState instanceState = task.getInstanceState();
-    assertThat(instanceState.getFailedRecordCounter("mytopic", "ks1.table1").getCount())
-        .isEqualTo(3);
-    assertThat(instanceState.getRecordCounter("mytopic", "ks1.table1").getCount()).isEqualTo(4);
-    assertThat(instanceState.getFailedWithUnknownTopicCounter().getCount()).isEqualTo(1);
+    assertThat(instanceState.getFailedRecordCounter("mytopic", "ks1.table1")).isEqualTo(3);
+    assertThat(instanceState.getRecordCounter("mytopic", "ks1.table1")).isEqualTo(4);
+    assertThat(instanceState.getFailedWithUnknownTopicCounter()).isEqualTo(1);
   }
 
   @Test
@@ -451,9 +456,8 @@ class SimpleEndToEndSimulacronIT {
             "Error decoding/mapping Pulsar record PulsarSinkRecord{PulsarRecordImpl{topic=persistent://tenant/namespace/mytopic, value=GenericRecordImpl{values={field1=will fail}}")
         .contains("Could not parse 'bad key'");
     InstanceState instanceState = task.getInstanceState();
-    assertThat(instanceState.getFailedRecordCounter("mytopic", "ks1.table1").getCount())
-        .isEqualTo(1);
-    assertThat(instanceState.getRecordCounter("mytopic", "ks1.table1").getCount()).isEqualTo(2);
+    assertThat(instanceState.getFailedRecordCounter("mytopic", "ks1.table1")).isEqualTo(1);
+    assertThat(instanceState.getRecordCounter("mytopic", "ks1.table1")).isEqualTo(2);
   }
   //
   //  @ParameterizedTest
@@ -693,130 +697,121 @@ class SimpleEndToEndSimulacronIT {
   //    assertThat(new String(secondParam, StandardCharsets.UTF_8)).isEqualTo("the answer");
   //  }
   //
-  //  @Test
-  //  void batch_requests() {
-  //    // Insert 5 records: 2 from mytopic, 3 from yourtopic. Verify that they batch properly and
-  //    // with the correct CLs.
-  //
-  //    // Even though we will not be executing simple statements in this test, we must specify
-  //    // that we will so that Simulacron handles preparing our statement properly.
-  //    SimulacronUtils.primeTables(simulacron, schema);
-  //    Query good1 = makeQuery(42, "the answer", 153000987000L);
-  //    simulacron.prime(when(good1).then(noRows()));
-  //    Query good2 =
-  //        new Query(
-  //            "INSERT INTO ks1.table2(a,b) VALUES (:a,:b) USING TIMESTAMP
-  // :kafka_internal_timestamp",
-  //            Collections.emptyList(),
-  //            makeParams(42, "topic2 success1", 153000987000L),
-  //            PARAM_TYPES);
-  //    simulacron.prime(when(good2).then(noRows()));
-  //
-  //    conn.start(connectorProperties);
-  //
-  //    Record<GenericRecord> goodRecord1 = makeRecord(42, "the answer", 153000987L, 1234);
-  //    Record<GenericRecord> goodRecord2 = makeRecord(42, "the second answer", 153000987L, 1234);
-  //    Record<GenericRecord> goodRecord3 =
-  //        new Record<GenericRecord>(
-  //            "yourtopic",
-  //            0,
-  //            null,
-  //            42,
-  //            null,
-  //            "topic2 success1",
-  //            1235L,
-  //            153000987L,
-  //            TimestampType.CREATE_TIME);
-  //    Record<GenericRecord> goodRecord4 =
-  //        new Record<GenericRecord>(
-  //            "yourtopic",
-  //            0,
-  //            null,
-  //            42,
-  //            null,
-  //            "topic2 success2",
-  //            1235L,
-  //            153000987L,
-  //            TimestampType.CREATE_TIME);
-  //    Record<GenericRecord> goodRecord5 =
-  //        new Record<GenericRecord>(
-  //            "yourtopic",
-  //            0,
-  //            null,
-  //            42,
-  //            null,
-  //            "topic2 success3",
-  //            1235L,
-  //            153000987L,
-  //            TimestampType.CREATE_TIME);
-  //
-  //    // The order of records shouldn't matter here, but we try to mix things up to emulate
-  //    // a real workload.
-  //    runTaskWithRecords(goodRecord1, goodRecord3, goodRecord2, goodRecord4, goodRecord5);
-  //
-  //    // Verify that we issued two batch requests, one at LOCAL_ONE (for table1/mytopic) and
-  //    // one at QUORUM (for table2/yourtopic). There's seem pretty gnarly unwrapping of request
-  //    // info. We distinguish one batch from the other based on the number of statements in the
-  //    // batch.
-  //    List<QueryLog> queryList =
-  //        simulacron
-  //            .node(0)
-  //            .getLogs()
-  //            .getQueryLogs()
-  //            .stream()
-  //            .filter(q -> q.getType().equals("BATCH"))
-  //            .collect(Collectors.toList());
-  //    Map<ConsistencyLevel, Integer> queryInfo =
-  //        queryList
-  //            .stream()
-  //            .map(queryLog -> (Batch) queryLog.getFrame().message)
-  //            .collect(
-  //                Collectors.toMap(
-  //                    message -> ConsistencyLevel.fromCode(message.consistency),
-  //                    message -> message.values.size()));
-  //    assertThat(queryInfo)
-  //        .containsOnly(entry(ConsistencyLevel.LOCAL_ONE, 2), entry(ConsistencyLevel.QUORUM, 3));
-  //
-  //    InstanceState instanceState = task.getInstanceState();
-  //
-  //    // verify that was one batch with 2 statements for mytopic
-  //    verifyOneBatchWithNStatements(instanceState.getBatchSizeHistogram("mytopic", "ks1.table1"),
-  // 2);
-  //
-  //    // verify that was one batch with 3 statements for yourtopic
-  //    verifyOneBatchWithNStatements(
-  //        instanceState.getBatchSizeHistogram("yourtopic", "ks1.table2"), 3);
-  //
-  //    // verify batchSizeInBytes updates for mytopic
-  //    verifyBatchSizeInBytesUpdate(
-  //        instanceState.getBatchSizeInBytesHistogram("mytopic", "ks1.table1"), 2, false);
-  //
-  //    // verify batchSizeInBytes updates for yourtopic
-  //    verifyBatchSizeInBytesUpdate(
-  //        instanceState.getBatchSizeInBytesHistogram("yourtopic", "ks1.table2"), 3, true);
-  //  }
-  //
-  //  private void verifyOneBatchWithNStatements(Histogram histogram, long numberOfStatements) {
-  //    // one batch
-  //    assertThat(histogram.getCount()).isEqualTo(1);
-  //    // that had numberOfStatements statements in it
-  //    assertThat(histogram.getSnapshot().getMax()).isEqualTo(numberOfStatements);
-  //    assertThat(histogram.getSnapshot().getMin()).isEqualTo(numberOfStatements);
-  //  }
-  //
-  //  private void verifyBatchSizeInBytesUpdate(
-  //      Histogram histogram, long numberOfUpdates, boolean allMessagesInBatchAreTheSame) {
-  //    // verify that size in bytes was updated for every statement in batch
-  //    assertThat(histogram.getCount()).isEqualTo(numberOfUpdates);
-  //    if (allMessagesInBatchAreTheSame) {
-  //      // min and max are the same because statements in batch are different
-  //      assertThat(histogram.getSnapshot().getMax()).isEqualTo(histogram.getSnapshot().getMin());
-  //    } else {
-  //      // min and max are different because statements in batch are different
-  //
-  // assertThat(histogram.getSnapshot().getMax()).isNotEqualTo(histogram.getSnapshot().getMin());
-  //    }
-  //  }
+  @Test
+  void batch_requests() {
+    // Insert 5 records: 2 from mytopic, 3 from yourtopic. Verify that they batch properly and
+    // with the correct CLs.
+
+    // Even though we will not be executing simple statements in this test, we must specify
+    // that we will so that Simulacron handles preparing our statement properly.
+    SimulacronUtils.primeTables(simulacron, schema);
+    Query good1 = makeQuery(42, "the answer", 153000987000L);
+    simulacron.prime(when(good1).then(noRows()));
+    Query good2 =
+        new Query(
+            "INSERT INTO ks1.table2(a,b) VALUES (:a,:b) USING TIMESTAMP :kafka_internal_timestamp",
+            Collections.emptyList(),
+            makeParams(42, "topic2 success1", 153000987000L),
+            PARAM_TYPES);
+    simulacron.prime(when(good2).then(noRows()));
+
+    taskConfigs.add(connectorProperties);
+
+    Record<GenericRecord> goodRecord1 = makeRecord(42, "the answer", 153000987L, 1234);
+    Record<GenericRecord> goodRecord2 = makeRecord(42, "the second answer", 153000987L, 1234);
+    Record<GenericRecord> goodRecord3 =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/yourtopic",
+            "42",
+            new GenericRecordImpl().put("field1", "topic2 success1"),
+            recordType,
+            153000987L);
+    Record<GenericRecord> goodRecord4 =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/yourtopic",
+            "42",
+            new GenericRecordImpl().put("field1", "topic2 success2"),
+            recordType,
+            153000987L);
+    Record<GenericRecord> goodRecord5 =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/yourtopic",
+            "42",
+            new GenericRecordImpl().put("field1", "topic2 success3"),
+            recordType,
+            153000987L);
+    ;
+
+    // The order of records shouldn't matter here, but we try to mix things up to emulate
+    // a real workload.
+    runTaskWithRecords(goodRecord1, goodRecord3, goodRecord2, goodRecord4, goodRecord5);
+
+    // Verify that we issued two batch requests, one at LOCAL_ONE (for table1/mytopic) and
+    // one at QUORUM (for table2/yourtopic). There's seem pretty gnarly unwrapping of request
+    // info. We distinguish one batch from the other based on the number of statements in the
+    // batch.
+    List<QueryLog> queryList =
+        simulacron
+            .node(0)
+            .getLogs()
+            .getQueryLogs()
+            .stream()
+            .filter(q -> q.getType().equals("BATCH"))
+            .collect(Collectors.toList());
+    Map<ConsistencyLevel, Integer> queryInfo =
+        queryList
+            .stream()
+            .map(queryLog -> (Batch) queryLog.getFrame().message)
+            .collect(
+                Collectors.toMap(
+                    message -> ConsistencyLevel.fromCode(message.consistency),
+                    message -> message.values.size()));
+    assertThat(queryInfo)
+        .containsOnly(entry(ConsistencyLevel.LOCAL_ONE, 2), entry(ConsistencyLevel.QUORUM, 3));
+
+    InstanceState instanceState = task.getInstanceState();
+
+    // verify that was one batch with 2 statements for mytopic
+    verifyOneBatchWithNStatements(
+        instanceState.getBatchSizeHistogramSummary("mytopic", "ks1.table1"), 2);
+
+    // verify that was one batch with 3 statements for yourtopic
+    verifyOneBatchWithNStatements(
+        instanceState.getBatchSizeHistogramSummary("yourtopic", "ks1.table2"), 3);
+
+    // verify batchSizeInBytes updates for mytopic
+    verifyBatchSizeInBytesUpdate(
+        instanceState.getBatchSizeInBytesHistogramSummary("mytopic", "ks1.table1"), 2, false);
+
+    // verify batchSizeInBytes updates for yourtopic
+    verifyBatchSizeInBytesUpdate(
+        instanceState.getBatchSizeInBytesHistogramSummary("yourtopic", "ks1.table2"), 3, true);
+  }
+
+  private void verifyOneBatchWithNStatements(
+      InstanceState.HistogramSummary histogram, long numberOfStatements) {
+    // one batch
+    assertThat(histogram.getCount()).isEqualTo(1);
+    // that had numberOfStatements statements in it
+    assertThat(histogram.getMax()).isEqualTo(numberOfStatements);
+    assertThat(histogram.getMin()).isEqualTo(numberOfStatements);
+  }
+
+  private void verifyBatchSizeInBytesUpdate(
+      InstanceState.HistogramSummary histogram,
+      long numberOfUpdates,
+      boolean allMessagesInBatchAreTheSame) {
+    // verify that size in bytes was updated for every statement in batch
+    assertThat(histogram.getCount()).isEqualTo(numberOfUpdates);
+    if (allMessagesInBatchAreTheSame) {
+      // min and max are the same because statements in batch are different
+      assertThat(histogram.getMax()).isEqualTo(histogram.getMin());
+    } else {
+      // min and max are different because statements in batch are different
+
+      assertThat(histogram.getMax()).isNotEqualTo(histogram.getMin());
+    }
+  }
   //
   //  @Test
   //  void fail_batch_request() {
@@ -922,12 +917,22 @@ class SimpleEndToEndSimulacronIT {
   private void runTaskWithRecords(Record<GenericRecord>... records) {
     Map<String, Object> taskProps = taskConfigs.get(0);
     task.open(taskProps, sinkContext);
+    List<CompletableFuture<?>> results = new ArrayList<>();
     for (Record<GenericRecord> r : records) {
+      results.add(((PulsarRecordImpl) r).getResult());
       try {
         task.write(r);
       } catch (Throwable ex) {
         // ignore
         ex.printStackTrace();
+      }
+    }
+    // we need to wait for all of the records to be processed
+    for (CompletableFuture<?> handle : results) {
+      try {
+        handle.join();
+      } catch (Throwable e) {
+        // ignore
       }
     }
   }

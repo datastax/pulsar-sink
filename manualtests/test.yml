@@ -1,4 +1,6 @@
 configs:
+  batchSize: 10
+  batchFlushTimeoutMs: 1000
   tasks.max: 1
   topics: mytopic, mytopicudt, mytopicrawjson, mytopic7
   contactPoints: localhost

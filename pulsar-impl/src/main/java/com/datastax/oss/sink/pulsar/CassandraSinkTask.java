@@ -20,12 +20,19 @@ import com.datastax.oss.common.sink.AbstractSinkTask;
 import com.datastax.oss.common.sink.config.CassandraSinkConfig.IgnoreErrorsPolicy;
 import com.datastax.oss.common.sink.state.InstanceState;
 import com.datastax.oss.common.sink.util.SinkUtil;
+import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.pulsar.client.api.schema.Field;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
@@ -41,6 +48,11 @@ public class CassandraSinkTask<T> implements Sink<T> {
   protected AbstractSinkTask processor;
   private String version;
   private final LocalSchemaRegistry schemaRegistry = new LocalSchemaRegistry();
+  private List<Record<T>> incomingList;
+
+  private final AtomicBoolean isFlushing;
+  private int batchSize = 3000;
+  private ScheduledExecutorService flushExecutor;
 
   public CassandraSinkTask() {
     processor =
@@ -100,6 +112,8 @@ public class CassandraSinkTask<T> implements Sink<T> {
             return APPLICATION_NAME;
           }
         };
+    incomingList = Lists.newArrayList();
+    isFlushing = new AtomicBoolean(false);
   }
 
   @Override
@@ -108,8 +122,15 @@ public class CassandraSinkTask<T> implements Sink<T> {
     try {
       Map<String, String> processorConfig = ConfigUtil.flatString(cfg);
       processorConfig.put(SinkUtil.NAME_OPT, sc.getSinkName());
+      int batchFlushTimeoutMs =
+          Integer.parseInt(processorConfig.getOrDefault("batchFlushTimeoutMs", "1000"));
+      batchSize = Integer.parseInt(processorConfig.getOrDefault("batchSize", "3000"));
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
+
+      flushExecutor = Executors.newScheduledThreadPool(1);
+      flushExecutor.scheduleAtFixedRate(
+          this::flush, batchFlushTimeoutMs, batchFlushTimeoutMs, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
       log.error("initialization error", ex);
       close();
@@ -134,8 +155,39 @@ public class CassandraSinkTask<T> implements Sink<T> {
       }
     }
 
+    int number;
+    synchronized (this) {
+      incomingList.add(record);
+      number = incomingList.size();
+    }
+    if (number == batchSize) {
+      flushExecutor.schedule(this::flush, 0, TimeUnit.MILLISECONDS);
+    }
+
     PulsarSinkRecordImpl pulsarSinkRecordImpl = buildRecordImpl(record);
     processor.put(Collections.singleton(pulsarSinkRecordImpl));
+  }
+
+  private void flush() {
+    final List<Record<T>> swapList;
+    synchronized (this) {
+      if (!incomingList.isEmpty() && isFlushing.compareAndSet(false, true)) {
+        if (log.isDebugEnabled()) {
+          log.debug("Starting flush, queue size: {}", incomingList.size());
+        }
+        swapList = incomingList;
+        incomingList = new ArrayList<>();
+      } else {
+        return;
+      }
+    }
+
+    List<AbstractSinkRecord> toProcess = new ArrayList<>(swapList.size());
+    for (Record<T> record : swapList) {
+      toProcess.add(buildRecordImpl(record));
+    }
+    processor.put(toProcess);
+    isFlushing.compareAndSet(true, false);
   }
 
   PulsarSinkRecordImpl buildRecordImpl(Record<?> record) {
@@ -151,6 +203,9 @@ public class CassandraSinkTask<T> implements Sink<T> {
   public void close() {
     if (processor != null) {
       processor.stop();
+    }
+    if (flushExecutor != null) {
+      flushExecutor.shutdown();
     }
   }
 
