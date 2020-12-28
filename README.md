@@ -16,20 +16,29 @@ All documentation is available online [here](https://docs.datastax.com/en/pulsar
 If you want to develop and test the connector you need to build the jar from sources.
 To do so please follow those steps:
 
-1. First build the uber-jar: 
+1. First build the package and locate the datastax-cassandra .nar file (in pulsar-dist/target): 
 
        mvn clean package
 
-2. Open the Pulsar sink config file `config/pulsar-sink.yml`. Update the plugin 
-   search path to include the uber-jar:
+2. Copy the .nar file into the 'connectors' directory of your Pulsar broker 
 
-      TODO
+2. Open the Pulsar sink config file `config/pulsar-sink.yml` and configure your topic and mapping:
+
+       - in "topics" put the name of the topic
+       - create a mapping from your topic to your Cassandra table 
 
 3. Run Pulsar Sink LocalRun and specify the path to the that config file:
 
-       bin/pulsar-admin sinks localrun --sink-config-file \
-          config/pulsar-sink.yaml
-      TODO
+       bin/pulsar-admin sinks localrun \
+          
+          --sink-config-file /path/to/config/pulsar-sink.yaml \
+          -t datastax-cassandra \
+          -i persistent://public/default/topic
+
+   With this command you are reading data from topic 'persistent://public/default/topic', the destination Cassandra cluster (address, authentication...), keyspace
+   and table are defined in pulsar-sink.yml file
+
+   You can map multiple topics to multiple tables.
 
 ## Mapping specification
 

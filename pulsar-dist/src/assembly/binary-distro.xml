@@ -46,7 +46,7 @@
       <directory>${project.build.directory}</directory>
       <outputDirectory>.</outputDirectory>
       <includes>
-        <include>cassandra-sink-pulsar-*.jar</include>
+        <include>*.nar</include>
       </includes>
     </fileSet>
   </fileSets>
