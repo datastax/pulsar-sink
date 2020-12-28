@@ -1,0 +1,12 @@
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/PulsarSinkRecordImpl.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/pulsar/sink/codecs/StructToUDTCodec.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/PulsarStruct.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/StringCassandraSinkTask.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/LocalSchemaRegistry.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/PulsarField.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/PulsarSchema.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/pulsar/sink/codecs/PulsarCodecProvider.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/PulsarSinkConfig.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/CassandraSinkTask.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/RecordCassandraSinkTask.java
+/Users/enrico.olivelli/dev/pulsar-sink/pulsar-impl/src/main/java/com/datastax/oss/sink/pulsar/ConfigUtil.java

@@ -1,0 +1,13 @@
+com/datastax/oss/sink/pulsar/CassandraSinkTask.class
+com/datastax/oss/sink/pulsar/ConfigUtil.class
+com/datastax/oss/sink/pulsar/PulsarField.class
+com/datastax/oss/sink/pulsar/RecordCassandraSinkTask.class
+com/datastax/oss/sink/pulsar/StringCassandraSinkTask.class
+com/datastax/oss/pulsar/sink/codecs/StructToUDTCodec.class
+com/datastax/oss/sink/pulsar/LocalSchemaRegistry.class
+com/datastax/oss/sink/pulsar/PulsarSinkRecordImpl.class
+com/datastax/oss/sink/pulsar/PulsarSchema.class
+com/datastax/oss/sink/pulsar/PulsarStruct.class
+com/datastax/oss/pulsar/sink/codecs/PulsarCodecProvider.class
+com/datastax/oss/sink/pulsar/PulsarSinkConfig.class
+com/datastax/oss/sink/pulsar/CassandraSinkTask$1.class
