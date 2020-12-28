@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -163,25 +162,21 @@ public class CassandraSinkTask<T> implements Sink<T> {
     if (number == batchSize) {
       flushExecutor.schedule(this::flush, 0, TimeUnit.MILLISECONDS);
     }
-
-    PulsarSinkRecordImpl pulsarSinkRecordImpl = buildRecordImpl(record);
-    processor.put(Collections.singleton(pulsarSinkRecordImpl));
   }
 
   private void flush() {
     final List<Record<T>> swapList;
     synchronized (this) {
       if (!incomingList.isEmpty() && isFlushing.compareAndSet(false, true)) {
-        if (log.isDebugEnabled()) {
-          log.debug("Starting flush, queue size: {}", incomingList.size());
-        }
         swapList = incomingList;
         incomingList = new ArrayList<>();
       } else {
         return;
       }
     }
-
+    if (log.isDebugEnabled()) {
+      log.debug("Starting flush, queue size: {}", incomingList.size());
+    }
     List<AbstractSinkRecord> toProcess = new ArrayList<>(swapList.size());
     for (Record<T> record : swapList) {
       toProcess.add(buildRecordImpl(record));

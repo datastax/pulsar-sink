@@ -46,6 +46,7 @@ import com.datastax.oss.simulacron.common.cluster.QueryLog;
 import com.datastax.oss.simulacron.common.codec.ConsistencyLevel;
 import com.datastax.oss.simulacron.common.request.Query;
 import com.datastax.oss.simulacron.server.BoundCluster;
+import com.datastax.oss.sink.pulsar.CassandraSinkTask;
 import com.datastax.oss.sink.pulsar.GenericRecordImpl;
 import com.datastax.oss.sink.pulsar.PulsarRecordImpl;
 import com.datastax.oss.sink.pulsar.RecordCassandraSinkTask;
@@ -110,7 +111,7 @@ class SimpleEndToEndSimulacronIT {
   private final BoundCluster simulacron;
   private final SimulacronUtils.Keyspace schema;
   private final List<Map<String, Object>> taskConfigs = new ArrayList<>();
-  private final RecordCassandraSinkTask task;
+  private final CassandraSinkTask task;
   private final LogInterceptor logs;
   private final Map<String, Object> connectorProperties;
   private final String hostname;
@@ -914,11 +915,11 @@ class SimpleEndToEndSimulacronIT {
   //    assertThat(queryList.size()).isEqualTo(2);
   //  }
 
-  private void runTaskWithRecords(Record<GenericRecord>... records) {
+  private void runTaskWithRecords(Record<?>... records) {
     Map<String, Object> taskProps = taskConfigs.get(0);
     task.open(taskProps, sinkContext);
     List<CompletableFuture<?>> results = new ArrayList<>();
-    for (Record<GenericRecord> r : records) {
+    for (Record<?> r : records) {
       results.add(((PulsarRecordImpl) r).getResult());
       try {
         task.write(r);

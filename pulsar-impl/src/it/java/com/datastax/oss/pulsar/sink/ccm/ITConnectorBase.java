@@ -22,6 +22,7 @@ import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.sink.pulsar.CassandraSinkTask;
+import com.datastax.oss.sink.pulsar.PulsarRecordImpl;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.client.api.schema.GenericSchema;
@@ -92,14 +94,24 @@ public class ITConnectorBase {
     taskConfigs.clear();
   }
 
-  protected void runTaskWithRecords(Record<GenericRecord>... records) {
+  protected void runTaskWithRecords(Record<?>... records) {
     initConnectorAndTask();
-    for (Record<GenericRecord> r : records) {
+    List<CompletableFuture<?>> results = new ArrayList<>();
+    for (Record<?> r : records) {
+      results.add(((PulsarRecordImpl) r).getResult());
       try {
         task.write(r);
       } catch (Throwable ex) {
         // ignore
         ex.printStackTrace();
+      }
+    }
+    // we need to wait for all of the records to be processed
+    for (CompletableFuture<?> handle : results) {
+      try {
+        handle.join();
+      } catch (Throwable e) {
+        // ignore
       }
     }
   }
