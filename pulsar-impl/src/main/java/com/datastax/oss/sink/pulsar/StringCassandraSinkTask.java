@@ -19,7 +19,7 @@ import org.apache.pulsar.io.core.annotations.Connector;
 import org.apache.pulsar.io.core.annotations.IOType;
 
 @Connector(
-  name = "dssc-string",
+  name = "cassandra-enhanced-string",
   type = IOType.SINK,
   help = "DataStax Pulsar Sink is used for moving messages from Pulsar to Cassandra",
   configClass = PulsarSinkConfig.class

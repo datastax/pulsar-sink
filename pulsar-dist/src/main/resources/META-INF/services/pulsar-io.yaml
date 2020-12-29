@@ -1,4 +1,4 @@
-name: datastax-cassandra
+name: cassandra-enhanced
 description: >
   A DataStax Pulsar Sink to load records from Pulsar topics to
   Apache Cassandra(R) or DataStax Enterprise(DSE)

@@ -16,7 +16,7 @@ All documentation is available online [here](https://docs.datastax.com/en/pulsar
 If you want to develop and test the connector you need to build the jar from sources.
 To do so please follow those steps:
 
-1. First build the package and locate the datastax-cassandra .nar file (in pulsar-dist/target): 
+1. First build the package and locate the cassandra-enhanced .nar file (in pulsar-dist/target): 
 
        mvn clean package
 
@@ -32,7 +32,7 @@ To do so please follow those steps:
        bin/pulsar-admin sinks localrun \
           
           --sink-config-file /path/to/config/pulsar-sink.yaml \
-          -t datastax-cassandra \
+          -t cassandra-enhanced \
           -i persistent://public/default/topic
 
    With this command you are reading data from topic 'persistent://public/default/topic', the destination Cassandra cluster (address, authentication...), keyspace

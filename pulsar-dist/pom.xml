@@ -54,7 +54,7 @@
         <version>1.3.2</version>
         <extensions>true</extensions>
         <configuration>
-          <finalName>datastax-cassandra-${project.version}</finalName>
+          <finalName>cassandra-enhanced-${project.version}</finalName>
         </configuration>
         <executions>
           <execution>
