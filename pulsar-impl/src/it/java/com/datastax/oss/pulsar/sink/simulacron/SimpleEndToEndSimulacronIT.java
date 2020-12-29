@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.Schema;
@@ -917,6 +918,7 @@ class SimpleEndToEndSimulacronIT {
 
   private void runTaskWithRecords(Record<?>... records) {
     Map<String, Object> taskProps = taskConfigs.get(0);
+    task.setFlushExecutor(Executors.newSingleThreadScheduledExecutor());
     task.open(taskProps, sinkContext);
     List<CompletableFuture<?>> results = new ArrayList<>();
     for (Record<?> r : records) {

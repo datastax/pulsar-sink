@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.client.api.schema.GenericSchema;
@@ -118,6 +119,7 @@ public class ITConnectorBase {
 
   void initConnectorAndTask() {
     Map<String, Object> taskProps = taskConfigs.get(0);
+    task.setFlushExecutor(Executors.newSingleThreadScheduledExecutor());
     task.open(taskProps, taskContext);
   }
 

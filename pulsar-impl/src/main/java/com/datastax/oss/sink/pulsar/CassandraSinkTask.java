@@ -52,7 +52,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
 
   private final AtomicBoolean isFlushing;
   private int batchSize = 3000;
-  private final ScheduledExecutorService flushExecutor;
+  private ScheduledExecutorService flushExecutor;
 
   public CassandraSinkTask() {
     flushExecutor = Executors.newScheduledThreadPool(1);
@@ -256,5 +256,15 @@ public class CassandraSinkTask<T> implements Sink<T> {
   @VisibleForTesting
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
+  }
+
+  @VisibleForTesting
+  public ScheduledExecutorService getFlushExecutor() {
+    return flushExecutor;
+  }
+
+  @VisibleForTesting
+  public void setFlushExecutor(ScheduledExecutorService flushExecutor) {
+    this.flushExecutor = flushExecutor;
   }
 }
