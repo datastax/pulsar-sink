@@ -671,6 +671,17 @@ limitations under the License.]]></inlineHeader>
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>datastax-snapshots-local</id>
+      <name>DataStax Local Snapshots</name>
+      <url>https://repo.sjc.dsinternal.org/artifactory/datastax-snapshots-local/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
   </repositories>
   <distributionManagement>
     <repository>
