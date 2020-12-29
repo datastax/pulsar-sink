@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.pulsar.client.api.schema.Field;
 import org.apache.pulsar.client.api.schema.GenericRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Datatype. */
 public class PulsarSchema implements AbstractSchema {
@@ -39,8 +37,6 @@ public class PulsarSchema implements AbstractSchema {
   public static final PulsarSchema BOOLEAN = new PulsarSchema(AbstractSchema.Type.BOOLEAN);
   public static final PulsarSchema STRING = new PulsarSchema(AbstractSchema.Type.STRING);
   public static final PulsarSchema BYTES = new PulsarSchema(AbstractSchema.Type.BYTES);
-
-  private static final Logger log = LoggerFactory.getLogger(PulsarSchema.class);
 
   public static PulsarSchema of(String path, Object value, LocalSchemaRegistry registry) {
     if (value == null) {

@@ -24,22 +24,21 @@ import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
 
 /** Simple Record implementation */
-public class PulsarRecordImpl implements Record<GenericRecord> {
+public class PulsarRecordImpl implements Record {
   private final String topic;
-  private final GenericRecord value;
-  private final Schema<GenericRecord> schema;
+  private final Object value;
+  private final Schema schema;
   private final String key;
   private Long eventTime;
   private String partitionId;
   private Long recordSequence;
   private final CompletableFuture<Object> result = new CompletableFuture<>();
 
-  public PulsarRecordImpl(String topic, String key, GenericRecord value, Schema schema) {
+  public PulsarRecordImpl(String topic, String key, Object value, Schema schema) {
     this(topic, key, value, schema, System.currentTimeMillis());
   }
 
-  public PulsarRecordImpl(
-      String topic, String key, GenericRecord value, Schema schema, Long eventTime) {
+  public PulsarRecordImpl(String topic, String key, Object value, Schema schema, Long eventTime) {
     this.value = value;
     this.schema = schema;
     this.topic = topic;
@@ -78,7 +77,7 @@ public class PulsarRecordImpl implements Record<GenericRecord> {
   }
 
   @Override
-  public GenericRecord getValue() {
+  public Object getValue() {
     return value;
   }
 

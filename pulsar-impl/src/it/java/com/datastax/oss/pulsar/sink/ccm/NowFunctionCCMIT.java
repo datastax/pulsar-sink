@@ -135,11 +135,7 @@ class NowFunctionCCMIT extends EndToEndCCMITBase {
     // Set up records for "mytopic"
     String json = "{\"my_pk\": 1234567, \"my_value\": null}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic",
-            null,
-            new GenericRecordImpl().put("my_pk", 1234567).put("my_value", null),
-            recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
 
     runTaskWithRecords(record);
 

@@ -24,13 +24,10 @@ import org.apache.pulsar.functions.api.Record;
 /** @author enrico.olivelli */
 public class PulsarSinkRecordImpl implements AbstractSinkRecord {
   private final Record<?> record;
-  private final PulsarSchema schema;
   private final LocalSchemaRegistry schemaRegistry;
 
-  public PulsarSinkRecordImpl(
-      Record<?> record, PulsarSchema schema, LocalSchemaRegistry schemaRegistry) {
+  public PulsarSinkRecordImpl(Record<?> record, LocalSchemaRegistry schemaRegistry) {
     this.record = record;
-    this.schema = schema;
     this.schemaRegistry = schemaRegistry;
   }
 

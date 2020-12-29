@@ -61,4 +61,8 @@ public class LocalSchemaRegistry {
       return registry.computeIfAbsent(path, s -> PulsarSchema.of(path, value, this));
     }
   }
+
+  PulsarSchema getAtPath(String path) {
+    return registry.get(path);
+  }
 }

@@ -66,8 +66,7 @@ class MetadataCreatorTest {
 
     LocalSchemaRegistry localSchemaRegistry = new LocalSchemaRegistry();
     PulsarSinkRecordImpl pulsarSinkRecordImpl =
-        new PulsarSinkRecordImpl(
-            record, localSchemaRegistry.ensureAndUpdateSchema(record), localSchemaRegistry);
+        new PulsarSinkRecordImpl(record, localSchemaRegistry);
 
     InnerDataAndMetadata innerDataAndMetadata =
         MetadataCreator.makeMeta(pulsarSinkRecordImpl.value());

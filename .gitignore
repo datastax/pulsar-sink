@@ -14,3 +14,4 @@ dependency-reduced-pom.xml
 pulsar-dist/dependency-reduced-pom.xml
 
 logs/
+/pulsar-impl/nbproject/

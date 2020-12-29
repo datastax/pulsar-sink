@@ -20,6 +20,7 @@ import com.datastax.oss.common.sink.AbstractSinkTask;
 import com.datastax.oss.common.sink.config.CassandraSinkConfig.IgnoreErrorsPolicy;
 import com.datastax.oss.common.sink.state.InstanceState;
 import com.datastax.oss.common.sink.util.SinkUtil;
+import com.datastax.oss.driver.shaded.guava.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -51,9 +52,10 @@ public class CassandraSinkTask<T> implements Sink<T> {
 
   private final AtomicBoolean isFlushing;
   private int batchSize = 3000;
-  private ScheduledExecutorService flushExecutor;
+  private final ScheduledExecutorService flushExecutor;
 
   public CassandraSinkTask() {
+    flushExecutor = Executors.newScheduledThreadPool(1);
     processor =
         new AbstractSinkTask() {
           @Override
@@ -127,7 +129,6 @@ public class CassandraSinkTask<T> implements Sink<T> {
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
 
-      flushExecutor = Executors.newScheduledThreadPool(1);
       flushExecutor.scheduleAtFixedRate(
           this::flush, batchFlushTimeoutMs, batchFlushTimeoutMs, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
@@ -160,11 +161,11 @@ public class CassandraSinkTask<T> implements Sink<T> {
       number = incomingList.size();
     }
     if (number == batchSize) {
-      flushExecutor.schedule(this::flush, 0, TimeUnit.MILLISECONDS);
+      flushExecutor.submit(this::flush);
     }
   }
 
-  private void flush() {
+  protected void flush() {
     final List<Record<T>> swapList;
     synchronized (this) {
       if (!incomingList.isEmpty() && isFlushing.compareAndSet(false, true)) {
@@ -181,16 +182,18 @@ public class CassandraSinkTask<T> implements Sink<T> {
     for (Record<T> record : swapList) {
       toProcess.add(buildRecordImpl(record));
     }
-    processor.put(toProcess);
+    process(toProcess);
     isFlushing.compareAndSet(true, false);
+  }
+
+  protected void process(List<AbstractSinkRecord> toProcess) {
+    processor.put(toProcess);
   }
 
   PulsarSinkRecordImpl buildRecordImpl(Record<?> record) {
     // TODO: batch records, in Kafka the system sends batches, here we
     // are procesing only one record at a time
-    PulsarSchema schema = schemaRegistry.ensureAndUpdateSchema(record);
-    PulsarSinkRecordImpl pulsarSinkRecordImpl =
-        new PulsarSinkRecordImpl(record, schema, schemaRegistry);
+    PulsarSinkRecordImpl pulsarSinkRecordImpl = new PulsarSinkRecordImpl(record, schemaRegistry);
     return pulsarSinkRecordImpl;
   }
 
@@ -199,9 +202,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
     if (processor != null) {
       processor.stop();
     }
-    if (flushExecutor != null) {
-      flushExecutor.shutdown();
-    }
+    flushExecutor.shutdown();
   }
 
   private String getVersion() {
@@ -240,5 +241,20 @@ public class CassandraSinkTask<T> implements Sink<T> {
 
   public LocalSchemaRegistry getSchemaRegistry() {
     return schemaRegistry;
+  }
+
+  @VisibleForTesting
+  public List<Record<T>> getIncomingList() {
+    return incomingList;
+  }
+
+  @VisibleForTesting
+  public int getBatchSize() {
+    return batchSize;
+  }
+
+  @VisibleForTesting
+  public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
   }
 }

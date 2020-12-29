@@ -32,8 +32,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import org.apache.pulsar.client.api.Schema;
-import org.apache.pulsar.client.api.schema.RecordSchemaBuilder;
-import org.apache.pulsar.common.schema.SchemaType;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -47,19 +45,13 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
   @Test
   void raw_udt_value_from_json() {
     taskConfigs.add(makeConnectorProperties("bigintcol=key, udtcol=value"));
-    RecordSchemaBuilder builder =
-        org.apache.pulsar.client.api.schema.SchemaBuilder.record("MyBean");
-    builder.field("udtmem1").type(SchemaType.INT32);
-    builder.field("udtmem2").type(SchemaType.STRING);
-    Schema recordTypeUtd =
-        org.apache.pulsar.client.api.Schema.generic(builder.build(SchemaType.JSON));
 
     PulsarRecordImpl record =
         new PulsarRecordImpl(
             "persistent://tenant/namespace/mytopic",
             "98761234",
-            new GenericRecordImpl().put("udtmem1", 42).put("udtmem2", "the answer"),
-            recordTypeUtd);
+            "{\"udtmem1\": 42, \"udtmem2\": \"the answer\"}",
+            Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database.
@@ -81,19 +73,12 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
   void raw_udt_value_and_cherry_pick_from_json() {
     taskConfigs.add(makeConnectorProperties("bigintcol=key, udtcol=value, intcol=value.udtmem1"));
 
-    RecordSchemaBuilder builder =
-        org.apache.pulsar.client.api.schema.SchemaBuilder.record("MyBean");
-    builder.field("udtmem1").type(SchemaType.INT32);
-    builder.field("udtmem2").type(SchemaType.STRING);
-    Schema recordTypeUtd =
-        org.apache.pulsar.client.api.Schema.generic(builder.build(SchemaType.JSON));
-
     PulsarRecordImpl record =
         new PulsarRecordImpl(
             "persistent://tenant/namespace/mytopic",
             "98761234",
-            new GenericRecordImpl().put("udtmem1", 42).put("udtmem2", "the answer"),
-            recordTypeUtd);
+            "{\"udtmem1\": 42, \"udtmem2\": \"the answer\"}",
+            Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database.
@@ -128,22 +113,27 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
                 + "tinyintcol=value.tinyint"));
 
     Long baseValue = 1234567L;
+    String value =
+        String.format(
+            "{\"bigint\": %d, "
+                + "\"boolean\": %b, "
+                + "\"double\": %f, "
+                + "\"float\": %f, "
+                + "\"int\": %d, "
+                + "\"smallint\": %d, "
+                + "\"text\": \"%s\", "
+                + "\"tinyint\": %d}",
+            baseValue,
+            (baseValue.intValue() & 1) == 1,
+            (double) baseValue + 0.123,
+            baseValue.floatValue() + 0.987f,
+            baseValue.intValue(),
+            baseValue.shortValue(),
+            baseValue.toString(),
+            baseValue.byteValue());
 
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic",
-            "98761234",
-            new GenericRecordImpl()
-                .put("bigint", baseValue)
-                .put("boolean", (baseValue.intValue() & 1) == 1)
-                .put("double", (double) baseValue + 0.123)
-                .put("float", baseValue.floatValue() + 0.987f)
-                .put("int", baseValue.intValue())
-                .put("smallint", baseValue.shortValue())
-                .put("text", baseValue.toString())
-                .put("tinyint", baseValue.byteValue()),
-            recordTypeJson);
-
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, value, Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database.
@@ -165,20 +155,8 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
     taskConfigs.add(makeConnectorProperties("bigintcol=value.f1, mapcol=value.f2"));
 
     String value = "{\"f1\": 42, \"f2\": {\"sub1\": 37, \"sub2\": 96}}";
-
-    RecordSchemaBuilder builder =
-        org.apache.pulsar.client.api.schema.SchemaBuilder.record("MyBean");
-    builder.field("f1").type(SchemaType.INT64);
-    builder.field("f2").type(SchemaType.STRING);
-
-    Schema recordType = org.apache.pulsar.client.api.Schema.generic(builder.build(SchemaType.JSON));
-
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic",
-            "98761234",
-            new GenericRecordImpl().put("f1", 42).put("f2", "{\"sub1\": 37, \"sub2\": 96}"),
-            recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, value, Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database.
@@ -193,19 +171,76 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
   }
 
   @Test
+  void json_key_struct_value() {
+    // Map various fields from the key and value to columns.
+    taskConfigs.add(
+        makeConnectorProperties(
+            "bigintcol=key.bigint, "
+                + "booleancol=value.boolean, "
+                + "doublecol=key.double, "
+                + "floatcol=value.float, "
+                + "intcol=key.int, "
+                + "textcol=key.text "));
+
+    // Use a Struct for the value.
+    Long baseValue = 98761234L;
+    GenericRecordImpl structValue =
+        new GenericRecordImpl()
+            .put("bigint", baseValue)
+            .put("boolean", (baseValue.intValue() & 1) == 1)
+            .put("double", (double) baseValue + 0.123)
+            .put("float", baseValue.floatValue() + 0.987f)
+            .put("int", baseValue.intValue())
+            .put("text", baseValue.toString());
+
+    // Use JSON for the key.
+    Long baseKey = 1234567L;
+    String jsonKey =
+        String.format(
+            "{\"bigint\": %d, "
+                + "\"boolean\": %b, "
+                + "\"double\": %f, "
+                + "\"float\": %f, "
+                + "\"int\": %d, "
+                + "\"smallint\": %d, "
+                + "\"text\": \"%s\", "
+                + "\"tinyint\": %d}",
+            baseKey,
+            (baseKey.intValue() & 1) == 1,
+            (double) baseKey + 0.123,
+            baseKey.floatValue() + 0.987f,
+            baseKey.intValue(),
+            baseKey.shortValue(),
+            baseKey.toString(),
+            baseKey.byteValue());
+
+    PulsarRecordImpl record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic", jsonKey, structValue, recordType);
+    runTaskWithRecords(record);
+
+    // Verify that the record was inserted properly in the database.
+    List<Row> results = session.execute("SELECT * FROM types").all();
+    assertThat(results.size()).isEqualTo(1);
+    Row row = results.get(0);
+    assertThat(row.getLong("bigintcol")).isEqualTo(baseKey);
+    assertThat(row.getBoolean("booleancol")).isEqualTo((baseValue.intValue() & 1) == 1);
+    assertThat(row.getDouble("doublecol")).isEqualTo((double) baseKey + 0.123);
+    assertThat(row.getFloat("floatcol")).isEqualTo(baseValue.floatValue() + 0.987f);
+    assertThat(row.getInt("intcol")).isEqualTo(baseKey.intValue());
+    assertThat(row.getString("textcol")).isEqualTo(baseKey.toString());
+  }
+
+  @Test
   void null_in_json() {
     // Make a row with some value for textcol to start with.
     session.execute("INSERT INTO types (bigintcol, textcol) VALUES (1234567, 'got here')");
 
     taskConfigs.add(makeConnectorProperties("bigintcol=value.bigint, textcol=value.text"));
 
+    String json = "{\"bigint\": 1234567, \"text\": null}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic",
-            "98761234",
-            new GenericRecordImpl().put("bigint", 1234567L).put("text", null),
-            recordTypeJson);
-
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database; textcol should be unchanged.
@@ -228,23 +263,11 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
             ImmutableMap.of(
                 String.format("topic.ctr.%s.mycounter.mapping", keyspaceName),
                 "c1=value.f1, c2=value.f2, c3=value.f3, c4=value.f4")));
-    RecordSchemaBuilder builder =
-        org.apache.pulsar.client.api.schema.SchemaBuilder.record("MyBean");
-    builder.field("f1").type(SchemaType.INT64);
-    builder.field("f2").type(SchemaType.INT64);
-    builder.field("f3").type(SchemaType.INT64);
-    builder.field("f4").type(SchemaType.INT64);
-    Schema recordType = org.apache.pulsar.client.api.Schema.generic(builder.build(SchemaType.JSON));
-
+    String value = "{" + "\"f1\": 1, " + "\"f2\": 2, " + "\"f3\": 3, " + "\"f4\": 4" + "}";
     PulsarRecordImpl record =
         new PulsarRecordImpl(
-            "persistent://tn/ns/ctr",
-            null,
-            new GenericRecordImpl().put("f1", 1L).put("f2", 2L).put("f3", 3L).put("f4", 4L),
-            recordType,
-            null // NO TIMESTAMP
+            "persistent://tn/ns/ctr", null, value, Schema.STRING, null // NO TIMESTAMP
             );
-
     // Insert the record twice; the counter columns should accrue.
     runTaskWithRecords(record, record);
 
@@ -273,24 +296,15 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
                 .put("topic.mytopic.codec.unit", "SECONDS")
                 .build()));
 
-    RecordSchemaBuilder builder =
-        org.apache.pulsar.client.api.schema.SchemaBuilder.record("MyBean");
-    builder.field("key").type(SchemaType.INT32);
-    builder.field("vdate").type(SchemaType.STRING);
-    builder.field("vtime").type(SchemaType.STRING);
-    builder.field("vseconds").type(SchemaType.INT32);
-    Schema recordType = org.apache.pulsar.client.api.Schema.generic(builder.build(SchemaType.JSON));
-
+    String value =
+        "{\n"
+            + "  \"key\": 4376,\n"
+            + "  \"vdate\": \"vendredi, 9 mars 2018\",\n"
+            + "  \"vtime\": 171232584,\n"
+            + "  \"vseconds\": 1520611952\n"
+            + "}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic",
-            null,
-            new GenericRecordImpl()
-                .put("key", 4376)
-                .put("vdate", "vendredi, 9 mars 2018")
-                .put("vtime", "171232584")
-                .put("vseconds", 1520611952),
-            recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, value, Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database.
@@ -319,24 +333,15 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
                 .put("topic.mytopic.codec.unit", "SECONDS")
                 .build()));
 
-    RecordSchemaBuilder builder =
-        org.apache.pulsar.client.api.schema.SchemaBuilder.record("MyBean");
-    builder.field("key").type(SchemaType.INT32);
-    builder.field("vdate").type(SchemaType.STRING);
-    builder.field("vtimestamp").type(SchemaType.STRING);
-    builder.field("vtime").type(SchemaType.STRING);
-    Schema recordType = org.apache.pulsar.client.api.Schema.generic(builder.build(SchemaType.JSON));
-
+    String value =
+        "{\n"
+            + "  \"key\": 4376,\n"
+            + "  \"vdate\": \"vendredi, 9 mars 2018\",\n"
+            + "  \"vtime\": 171232584,\n"
+            + "  \"vtimestamp\": \"2018-03-09T17:12:32.584+01:00[Europe/Paris]\"\n"
+            + "}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic",
-            null,
-            new GenericRecordImpl()
-                .put("key", 4376)
-                .put("vdate", "vendredi, 9 mars 2018")
-                .put("vtime", "171232584")
-                .put("vtimestamp", "2018-03-09T17:12:32.584+01:00[Europe/Paris]"),
-            recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, value, Schema.STRING);
     runTaskWithRecords(record);
 
     // Verify that the record was inserted properly in the database.
