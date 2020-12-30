@@ -1,6 +1,6 @@
 configs:
-  verbose: true
-  batchSize: 1
+  verbose: false
+  batchSize: 3000
   batchFlushTimeoutMs: 1000
   tasks.max: 1
   topics: mytopic
