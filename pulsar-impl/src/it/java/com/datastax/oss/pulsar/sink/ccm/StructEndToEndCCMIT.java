@@ -237,7 +237,7 @@ class StructEndToEndCCMIT extends EndToEndCCMITBase {
         new GenericRecordImpl().put("bigint", baseValue).put("int", baseValue.intValue());
 
     runTaskWithRecords(
-        new PulsarRecordImpl("peristent://tenant/namespace/mytopic", null, value, schema));
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, value, schema));
 
     // Verify that the record was inserted properly in the database.
     List<Row> results = session.execute("SELECT * FROM types").all();
@@ -287,7 +287,7 @@ class StructEndToEndCCMIT extends EndToEndCCMITBase {
             .put("blob", blobValue);
 
     runTaskWithRecords(
-        new PulsarRecordImpl("peristent://tenant/namespace/mytopic", null, value, schema));
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, value, schema));
 
     // Verify that the record was inserted properly in the database.
     List<Row> results = session.execute("SELECT * FROM types").all();

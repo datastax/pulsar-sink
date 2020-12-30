@@ -259,7 +259,7 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
     // given
     taskConfigs.add(
         makeConnectorProperties(
-            "bigintcol=key.bigint, doublecol=key.double, __ttl = key.double",
+            "bigintcol=value.bigint, doublecol=value.double, __ttl = value.double",
             ImmutableMap.of(
                 String.format("topic.mytopic.%s.%s.ttlTimeUnit", keyspaceName, "types"),
                 "MILLISECONDS")));
@@ -311,7 +311,7 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
     // given
     taskConfigs.add(
         makeConnectorProperties(
-            "bigintcol=key.bigint, doublecol=key.double, __timestamp = key.double",
+            "bigintcol=value.bigint, doublecol=value.double, __timestamp = value.double",
             ImmutableMap.of(
                 String.format("topic.mytopic.%s.%s.ttlTimeUnit", keyspaceName, "types"),
                 "MILLISECONDS",
@@ -375,13 +375,12 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
     // given
     taskConfigs.add(
         makeConnectorProperties(
-            "bigintcol=key.bigint, doublecol=key.double, __timestamp = key.timestampcol"));
+            "bigintcol=value.bigint, doublecol=value.double, __timestamp = value.timestampcol"));
 
     // when
     String json = "{\"bigint\": 1234567, \"double\": 42.0, \"timestampcol\": 1000}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic", json, new GenericRecordImpl(), recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
     runTaskWithRecords(record);
 
     // then

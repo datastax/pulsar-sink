@@ -102,7 +102,7 @@ class HeadersCCMIT extends EndToEndCCMITBase {
     taskConfigs.add(makeConnectorProperties("bigintcol=key, udtcol=header"));
 
     PulsarRecordImpl record =
-        new PulsarRecordImpl("peristent://tenant/namespace/mytopic", null, 1234L, Schema.INT64)
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, 1234L, Schema.INT64)
             .setProperty("myproperty", "value");
 
     assertThatThrownBy(() -> runTaskWithRecords(record))

@@ -20,6 +20,7 @@ import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkRecordHeader;
 import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.schema.GenericRecord;
+import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.functions.api.Record;
 
 /** @author enrico.olivelli */
@@ -101,16 +102,17 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
   }
 
   public static String shortTopic(Record<?> record) {
-    // persistent://tenant/namespace/topicname
+    // persistent://public/default/topicname
+    // persistent://public/default/mytopic-partition-1
     if (!record.getTopicName().isPresent()) {
       return null;
     }
-    String longName = record.getTopicName().get();
-    int lastSlash = longName.lastIndexOf('/');
-    if (lastSlash > 0 && lastSlash <= longName.length()) {
-      return longName.substring(lastSlash + 1);
+    TopicName topicName = TopicName.get(record.getTopicName().get());
+    if (topicName.isPartitioned()) {
+      // getPartitionedTopicName extract the topic name, handling the partition suffix
+      topicName = TopicName.get(topicName.getPartitionedTopicName());
     }
-    throw new IllegalArgumentException("Unexpected topic name " + longName);
+    return topicName.getLocalName();
   }
 
   @Override
