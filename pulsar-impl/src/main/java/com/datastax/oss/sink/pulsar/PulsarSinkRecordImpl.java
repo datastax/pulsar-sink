@@ -20,11 +20,11 @@ import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkRecordHeader;
 import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.schema.GenericRecord;
-import org.apache.pulsar.common.naming.TopicName;
 import org.apache.pulsar.functions.api.Record;
 
 /** @author enrico.olivelli */
 public class PulsarSinkRecordImpl implements AbstractSinkRecord {
+  private static final String PARTITIONED_TOPIC_SUFFIX = "-partition-";
   private final Record<?> record;
   private final LocalSchemaRegistry schemaRegistry;
 
@@ -107,12 +107,20 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
     if (!record.getTopicName().isPresent()) {
       return null;
     }
-    TopicName topicName = TopicName.get(record.getTopicName().get());
-    if (topicName.isPartitioned()) {
-      // getPartitionedTopicName extract the topic name, handling the partition suffix
-      topicName = TopicName.get(topicName.getPartitionedTopicName());
+    // we cannot use org.apache.pulsar.common.naming.TopicName due
+    // to classloading issues
+    String rawName = record.getTopicName().get();
+    int lastSlash = rawName.lastIndexOf('/');
+    if (lastSlash < 0 || lastSlash == rawName.length()) {
+      return rawName;
     }
-    return topicName.getLocalName();
+    rawName = rawName.substring(lastSlash + 1);
+    int pos = rawName.indexOf(PARTITIONED_TOPIC_SUFFIX);
+    if (pos < 0) {
+      return rawName;
+    } else {
+      return rawName.substring(0, pos);
+    }
   }
 
   @Override

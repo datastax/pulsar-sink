@@ -21,7 +21,6 @@ import com.datastax.oss.common.sink.config.CassandraSinkConfig.IgnoreErrorsPolic
 import com.datastax.oss.common.sink.state.InstanceState;
 import com.datastax.oss.common.sink.util.SinkUtil;
 import com.datastax.oss.driver.shaded.guava.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -124,7 +123,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
             return APPLICATION_NAME;
           }
         };
-    incomingList = Lists.newArrayList();
+    incomingList = new ArrayList<>();
     isFlushing = new AtomicBoolean(false);
   }
 
@@ -201,7 +200,12 @@ public class CassandraSinkTask<T> implements Sink<T> {
   }
 
   protected void process(List<AbstractSinkRecord> toProcess) {
-    processor.put(toProcess);
+    try {
+      processor.put(toProcess);
+    } catch (Throwable t) {
+      log.error("Fatal error occurred during processing: {}", t);
+      throw new RuntimeException(t);
+    }
   }
 
   PulsarSinkRecordImpl buildRecordImpl(Record<?> record) {

@@ -28,6 +28,10 @@ public class PulsarSinkRecordImplTest {
   public void testShortTopic() {
     testTopicName("persistent://public/defaul/mytopic", "mytopic");
     testTopicName("persistent://public/defaul/mytopic-partition-1", "mytopic");
+    // edge conditions, that cannot happen in real life
+    testTopicName("", "");
+    testTopicName("/", "");
+    testTopicName("persistent://public/defaul/mytopic-partition-", "mytopic");
   }
 
   private static void testTopicName(String topic, String expResult) {
