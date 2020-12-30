@@ -53,6 +53,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
   private final AtomicBoolean isFlushing;
   private int batchSize = 3000;
   private ScheduledExecutorService flushExecutor;
+  private boolean verbose = false;
 
   public CassandraSinkTask() {
     flushExecutor = Executors.newScheduledThreadPool(1);
@@ -90,8 +91,14 @@ public class CassandraSinkTask<T> implements Sink<T> {
               log.debug("Details of the error", e);
             }
             if (!ignore) {
+              if (verbose) {
+                log.info("fail record {} due to {}", impl, e);
+              }
               impl.getRecord().fail();
             } else {
+              if (verbose) {
+                log.info("ack failed record {}, ignore {}", impl, e);
+              }
               impl.getRecord().ack();
             }
           }
@@ -99,7 +106,11 @@ public class CassandraSinkTask<T> implements Sink<T> {
           @Override
           protected void handleSuccess(AbstractSinkRecord record) {
             PulsarSinkRecordImpl impl = (PulsarSinkRecordImpl) record;
-            log.debug("ack record {}", impl);
+            if (verbose) {
+              log.info("ack record {}", impl);
+            } else {
+              log.debug("ack record {}", impl);
+            }
             impl.getRecord().ack();
           }
 
@@ -126,6 +137,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
       int batchFlushTimeoutMs =
           Integer.parseInt(processorConfig.getOrDefault("batchFlushTimeoutMs", "1000"));
       batchSize = Integer.parseInt(processorConfig.getOrDefault("batchSize", "3000"));
+      verbose = Boolean.parseBoolean(processorConfig.getOrDefault("verbose", "false"));
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
 
@@ -154,7 +166,9 @@ public class CassandraSinkTask<T> implements Sink<T> {
         log.debug("write {}", rawvalue);
       }
     }
-
+    if (verbose) {
+      log.info("received {} with headers {}", record, record.getProperties());
+    }
     int number;
     synchronized (this) {
       incomingList.add(record);
