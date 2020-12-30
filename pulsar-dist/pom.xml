@@ -102,6 +102,7 @@
                 <descriptor>src/assembly/binary-distro.xml</descriptor>
               </descriptors>
               <tarLongFileMode>posix</tarLongFileMode>
+              <finalName>cassandra-enhanced-${project.version}</finalName>
             </configuration>
           </plugin>
           <plugin>
