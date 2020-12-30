@@ -471,7 +471,7 @@ class StructEndToEndCCMIT extends EndToEndCCMITBase {
 
   /**
    * Test for KAF-83 (case-sensitive fields and columns). In Pulsar we cannot have field names with
-   * dots and spaces, so this test is less significant than the one for Kafka sink
+   * dots and spaces, so this test is less significant than the one for Pulsar sink
    */
   @Test
   void single_map_quoted_fields_to_quoted_columns() {

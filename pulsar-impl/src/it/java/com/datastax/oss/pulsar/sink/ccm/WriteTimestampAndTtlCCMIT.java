@@ -202,17 +202,15 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
     // given
     taskConfigs.add(
         makeConnectorProperties(
-            "bigintcol=key.bigint, doublecol=key.double, __ttl = key.ttlcol",
+            "bigintcol=value.bigint, doublecol=value.double, __ttl = value.ttlcol",
             ImmutableMap.of(
                 String.format("topic.mytopic.%s.%s.ttlTimeUnit", keyspaceName, "types"),
                 "MILLISECONDS")));
 
-    // difference with Kafka Sink: we are using the Key, as we can decode raw JSON from the string
     // when
     String json = "{\"bigint\": 1234567, \"double\": 42.0, \"ttlcol\": 1000000}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic", json, new GenericRecordImpl(), recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
     runTaskWithRecords(record);
 
     // then
@@ -230,20 +228,17 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
     // given
     taskConfigs.add(
         makeConnectorProperties(
-            "bigintcol=key.bigint, doublecol=key.double, __ttl = key.ttlcol, __timestamp = key.timestampcol",
+            "bigintcol=value.bigint, doublecol=value.double, __ttl = value.ttlcol, __timestamp = value.timestampcol",
             ImmutableMap.of(
                 String.format("topic.mytopic.%s.%s.ttlTimeUnit", keyspaceName, "types"),
                 "MILLISECONDS",
                 String.format("topic.mytopic.%s.%s.timestampTimeUnit", keyspaceName, "types"),
                 "MICROSECONDS")));
 
-    // difference with Kafka Sink: we are using the Key, as we can decode raw JSON from the string
-    // when
     String json =
         "{\"bigint\": 1234567, \"double\": 42.0, \"ttlcol\": 1000000, \"timestampcol\": 1000}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic", json, new GenericRecordImpl(), recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
     runTaskWithRecords(record);
 
     // then
@@ -269,12 +264,10 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
                 String.format("topic.mytopic.%s.%s.ttlTimeUnit", keyspaceName, "types"),
                 "MILLISECONDS")));
 
-    // difference with Kafka Sink: we are using the Key, as we can decode raw JSON from the string
     // when
     String json = "{\"bigint\": 1234567, \"double\": 1000000.0}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic", json, new GenericRecordImpl(), recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
     runTaskWithRecords(record);
 
     // then
@@ -325,12 +318,10 @@ public class WriteTimestampAndTtlCCMIT extends EndToEndCCMITBase {
                 String.format("topic.mytopic.%s.%s.timestampTimeUnit", keyspaceName, "types"),
                 "MILLISECONDS")));
 
-    // difference with Kafka Sink: we are using the Key, as we can decode raw JSON from the string
     // when
     String json = "{\"bigint\": 1234567, \"double\": 1000.0}";
     PulsarRecordImpl record =
-        new PulsarRecordImpl(
-            "persistent://tenant/namespace/mytopic", json, new GenericRecordImpl(), recordType);
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, json, Schema.STRING);
     runTaskWithRecords(record);
 
     // then

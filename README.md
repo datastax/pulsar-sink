@@ -1,6 +1,6 @@
 # DataStax Apache Pulsar Connector
 
-An Apache Pulsar® sink for transferring events/messages from Kafka topics to Apache Cassandra®,
+An Apache Pulsar® sink for transferring events/messages from Pulsar topics to Apache Cassandra®,
 DataStax Astra or DataStax Enterprise (DSE).
 
 ## Installation

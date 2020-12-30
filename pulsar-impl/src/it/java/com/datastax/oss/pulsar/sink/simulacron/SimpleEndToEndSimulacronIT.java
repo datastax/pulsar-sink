@@ -514,9 +514,9 @@ class SimpleEndToEndSimulacronIT {
   //    assertThat(currentOffsets).isEmpty();
   //
   //    assertThat(logs.getAllMessagesAsString())
-  //        .contains("Error inserting/updating row for Kafka record
+  //        .contains("Error inserting/updating row for Pulsar record
   // Record<GenericRecord>{kafkaOffset=1237")
-  //        .contains("Error inserting/updating row for Kafka record
+  //        .contains("Error inserting/updating row for Pulsar record
   // Record<GenericRecord>{kafkaOffset=1238")
   //        .contains(
   //            "statement: INSERT INTO ks1.table1(a,b) VALUES (:a,:b) USING TIMESTAMP

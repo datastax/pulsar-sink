@@ -26,12 +26,11 @@ import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.dsbulk.codecs.api.ConvertingCodec;
 import com.datastax.oss.dsbulk.codecs.api.ConvertingCodecFactory;
 import com.datastax.oss.sink.pulsar.PulsarStruct;
-import java.sql.Struct;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Codec to convert a Kafka {@link Struct} to a UDT. */
+/** Codec to convert a Pulsar Struct to a UDT. */
 public class StructToUDTCodec extends ConvertingCodec<PulsarStruct, UdtValue> {
 
   private final ConvertingCodecFactory codecFactory;

@@ -191,8 +191,6 @@ public class CassandraSinkTask<T> implements Sink<T> {
   }
 
   PulsarSinkRecordImpl buildRecordImpl(Record<?> record) {
-    // TODO: batch records, in Kafka the system sends batches, here we
-    // are procesing only one record at a time
     PulsarSinkRecordImpl pulsarSinkRecordImpl = new PulsarSinkRecordImpl(record, schemaRegistry);
     return pulsarSinkRecordImpl;
   }

@@ -1,8 +1,8 @@
-DataStax Apache Kafka (R) Connector License Terms
+DataStax Apache Pulsar (R) Connector License Terms
 
-Last Updated:  December 12, 2019
+Last Updated:  December 30, 2020
 
-PLEASE READ THIS DATASTAX APACHE KAFKA CONNECTOR TERMS (“AGREEMENT”) CAREFULLY. BY
+PLEASE READ THIS DATASTAX APACHE PULSAR CONNECTOR TERMS (“AGREEMENT”) CAREFULLY. BY
 CLICKING A BOX INDICATING ACCEPTANCE, DOWNLOADING OR USING THE SOFTWARE
 DOWNLOADED (“Licensed Software”), YOU ACKNOWLEDGE THAT YOU HAVE READ THE
 TERMS AND AGREE TO THEM. IF YOU ARE AGREEING TO THESE TERMS ON BEHALF OF A
@@ -17,7 +17,7 @@ Subject to the terms and conditions of this Agreement, DataStax grants you a
 non-exclusive, non-transferable, non-sublicensable, limited, royalty-free
 license to use the unmodified Licensed Software, without the right to
 re-distribute to any third party. The Licensed Software may be used for writing
-data from any distribution of Apache Kafka® to (i) any DataStax product for which
+data from any distribution of Apache Pulsar® to (i) any DataStax product for which
 you have an active, paid subscription and (ii) any other Apache CassandraTM or
 other CQL compatible databases.
 
@@ -125,4 +125,4 @@ THIRD-PARTY.txt file.
 
 If you have questions, please contact us here: www.datastax.com/contact.
 
-Apache Kafka® and Apache CassandraTM are trademarks of The Apache Software Foundation
+Apache Pulsar® and Apache CassandraTM are trademarks of The Apache Software Foundation
