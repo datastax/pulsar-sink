@@ -141,7 +141,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
   @Override
   public void write(Record<T> record) throws Exception {
     if (log.isDebugEnabled()) {
-      log.debug("write {}", record);
+      log.debug("write {} props {}", record, record.getProperties());
       Object rawvalue = record.getValue();
       if (rawvalue instanceof GenericRecord) {
         GenericRecord value = (GenericRecord) rawvalue;

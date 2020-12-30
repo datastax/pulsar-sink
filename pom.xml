@@ -35,7 +35,7 @@
     <module>pulsar-dist</module>
   </modules>
   <properties>
-    <messaging.connetors.commons.version>1.0.0-SNAPSHOT</messaging.connetors.commons.version>
+    <messaging.connectors.commons.version>1.0.1</messaging.connectors.commons.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
@@ -73,7 +73,7 @@
       <dependency>
         <groupId>com.datastax.oss</groupId>
         <artifactId>messaging-connectors-commons-core</artifactId>
-        <version>${messaging.connetors.commons.version}</version>
+        <version>${messaging.connectors.commons.version}</version>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>

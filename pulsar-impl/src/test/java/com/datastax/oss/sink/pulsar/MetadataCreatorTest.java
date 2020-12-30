@@ -21,7 +21,6 @@ import com.datastax.oss.common.sink.metadata.InnerDataAndMetadata;
 import com.datastax.oss.common.sink.metadata.MetadataCreator;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.type.PrimitiveType;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
@@ -31,8 +30,6 @@ import org.junit.jupiter.api.Test;
 class MetadataCreatorTest {
 
   private static final PrimitiveType CQL_TYPE = new PrimitiveType(-1);
-  private static final GenericType<JsonNode> JSON_NODE_GENERIC_TYPE =
-      GenericType.of(JsonNode.class);
 
   public static class MyPojo {
 

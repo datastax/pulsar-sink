@@ -16,6 +16,7 @@
 package com.datastax.oss.sink.pulsar;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +34,7 @@ public class PulsarRecordImpl implements Record {
   private String partitionId;
   private Long recordSequence;
   private final CompletableFuture<Object> result = new CompletableFuture<>();
+  private final Map<String, String> properties = new HashMap<>();
 
   public PulsarRecordImpl(String topic, String key, Object value, Schema schema) {
     this(topic, key, value, schema, System.currentTimeMillis());
@@ -89,9 +91,14 @@ public class PulsarRecordImpl implements Record {
     this.recordSequence = recordSequence;
   }
 
+  public PulsarRecordImpl setProperty(String key, String value) {
+    this.properties.put(key, value);
+    return this;
+  }
+
   @Override
   public Map<String, String> getProperties() {
-    return Collections.emptyMap();
+    return Collections.unmodifiableMap(properties);
   }
 
   @Override

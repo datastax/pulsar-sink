@@ -15,9 +15,10 @@
  */
 package com.datastax.oss.sink.pulsar;
 
+import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkRecordHeader;
-import java.util.Collections;
+import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
 
@@ -33,7 +34,42 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
 
   @Override
   public Iterable<AbstractSinkRecordHeader> headers() {
-    return Collections.emptyList();
+    return record
+        .getProperties()
+        .entrySet()
+        .stream()
+        .map(entry -> new PulsarSinkRecordHeader(entry.getKey(), entry.getValue()))
+        .collect(Collectors.toList());
+  }
+
+  private static final class PulsarSinkRecordHeader implements AbstractSinkRecordHeader {
+    private final String key;
+    private final String value;
+
+    public PulsarSinkRecordHeader(String key, String value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    @Override
+    public String key() {
+      return key;
+    }
+
+    @Override
+    public Object value() {
+      return value;
+    }
+
+    @Override
+    public AbstractSchema schema() {
+      return PulsarSchema.STRING;
+    }
+
+    @Override
+    public String toString() {
+      return "{" + "key=" + key + ", value=" + value + '}';
+    }
   }
 
   @Override
