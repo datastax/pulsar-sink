@@ -33,6 +33,7 @@
   <modules>
     <module>pulsar-impl</module>
     <module>pulsar-dist</module>
+    <module>tests</module>
   </modules>
   <properties>
     <messaging.connectors.commons.version>1.0.2</messaging.connectors.commons.version>
@@ -218,6 +219,21 @@
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-annotations</artifactId>
         <version>3.1.12</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>pulsar</artifactId>
+        <version>1.15.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pulsar</groupId>
+        <artifactId>pulsar-client-original</artifactId>
+        <version>${pulsar.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pulsar</groupId>
+        <artifactId>pulsar-client-admin-original</artifactId>
+        <version>${pulsar.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
