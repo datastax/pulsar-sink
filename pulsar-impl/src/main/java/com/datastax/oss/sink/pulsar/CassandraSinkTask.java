@@ -17,6 +17,7 @@ package com.datastax.oss.sink.pulsar;
 
 import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkTask;
+import com.datastax.oss.common.sink.config.CassandraSinkConfig;
 import com.datastax.oss.common.sink.config.CassandraSinkConfig.IgnoreErrorsPolicy;
 import com.datastax.oss.common.sink.state.InstanceState;
 import com.datastax.oss.common.sink.util.SinkUtil;
@@ -133,9 +134,11 @@ public class CassandraSinkTask<T> implements Sink<T> {
     try {
       Map<String, String> processorConfig = ConfigUtil.flatString(cfg);
       processorConfig.put(SinkUtil.NAME_OPT, sc.getSinkName());
+      processorConfig.put(
+          CassandraSinkConfig.JMX_CONNECTOR_DOMAIN_OPT, "com.datastax.oss.pulsar.sink");
       int batchFlushTimeoutMs =
           Integer.parseInt(processorConfig.getOrDefault("batchFlushTimeoutMs", "1000"));
-      batchSize = Integer.parseInt(processorConfig.getOrDefault("batchSize", "3000"));
+      batchSize = Integer.parseInt(processorConfig.getOrDefault("batchSize", "32"));
       verbose = Boolean.parseBoolean(processorConfig.getOrDefault("verbose", "false"));
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
@@ -166,7 +169,18 @@ public class CassandraSinkTask<T> implements Sink<T> {
       }
     }
     if (verbose) {
+      Object rawvalue = record.getValue();
       log.info("received {} with headers {}", record, record.getProperties());
+      if (rawvalue instanceof GenericRecord) {
+        GenericRecord value = (GenericRecord) rawvalue;
+        for (Field field : value.getFields()) {
+          Object v = value.getField(field);
+          String clazz = v != null ? v.getClass().toGenericString() : "";
+          log.info("field {} value {} class {}", field, v, clazz);
+        }
+      } else {
+        log.info("raw {}", rawvalue);
+      }
     }
     int number;
     synchronized (this) {
