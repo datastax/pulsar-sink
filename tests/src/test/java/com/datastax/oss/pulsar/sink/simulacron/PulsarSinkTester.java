@@ -41,8 +41,9 @@ public class PulsarSinkTester implements AutoCloseable {
 
   private static final Logger log = LoggerFactory.getLogger(PulsarSinkTester.class);
 
-  private static final String IMAGE_NAME = "apachepulsar/pulsar";
-  private static final String IMAGE_VERSION = "2.6.2";
+  private static final String IMAGE_NAME =
+      System.getProperty("pulsar.image", "apachepulsar/pulsar");
+  private static final String IMAGE_VERSION = System.getProperty("pulsar.image.version", "2.6.2");
 
   //  private static final String IMAGE_NAME = "datastax/pulsar-all";
   //  private static final String IMAGE_VERSION = "latest";
@@ -58,7 +59,7 @@ public class PulsarSinkTester implements AutoCloseable {
   private String valueTypeClassName;
 
   public void start() throws Exception {
-    log.info("Starting Pulsar Docker Container");
+    log.info("Starting Pulsar Docker Container: " + IMAGE_NAME + ":" + IMAGE_VERSION);
     pulsarContainer =
         new PulsarContainer(
                 DockerImageName.parse(IMAGE_NAME)
