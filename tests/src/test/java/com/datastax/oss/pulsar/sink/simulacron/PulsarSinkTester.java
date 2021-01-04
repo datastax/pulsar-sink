@@ -49,11 +49,13 @@ public class PulsarSinkTester implements AutoCloseable {
   private PulsarContainer pulsarContainer;
   private PulsarAdmin pulsarAdmin;
   private PulsarClient pulsarClient;
-  private static final String tenant = "public";
-  private static final String namespace = "default";
-  private static final String sinkname = "mysink";
+  private final String tenant = "public";
+  private final String namespace = "default";
+  private final String sinkname = "mysink";
 
-  private static final String TOPIC = "persistent://public/default/mytopic";
+  private final String topic = "persistent://public/default/mytopic";
+  private String sinkClassName;
+  private String valueTypeClassName;
 
   public void start() throws Exception {
     log.info("Starting Pulsar Docker Container");
@@ -100,8 +102,8 @@ public class PulsarSinkTester implements AutoCloseable {
   public void deploySink(Map<String, Object> connectorProperties) throws Exception {
     log.info("creating topic:");
     Thread.sleep(30000);
-    pulsarAdmin.topics().createNonPartitionedTopic(TOPIC);
-    TopicStats stats = pulsarAdmin.topics().getStats(TOPIC);
+    pulsarAdmin.topics().createNonPartitionedTopic(topic);
+    TopicStats stats = pulsarAdmin.topics().getStats(topic);
     log.info("stats: " + stats);
     SinkConfig sinkConfig =
         SinkConfig.builder()
@@ -110,7 +112,8 @@ public class PulsarSinkTester implements AutoCloseable {
             .name(sinkname)
             .namespace(namespace)
             .tenant(tenant)
-            .inputs(Collections.singleton(TOPIC))
+            .className(sinkClassName != null ? sinkClassName : null)
+            .inputs(Collections.singleton(topic))
             .build();
     String narPath = System.getProperty("narFile");
     log.info("create sink, narFile is " + narPath);
@@ -122,17 +125,35 @@ public class PulsarSinkTester implements AutoCloseable {
     String logs = grabSinkLogs();
     log.info("LOGS: " + logs);
 
-    assertThat(
-        logs,
-        containsString("typeClassName: \"org.apache.pulsar.client.api.schema.GenericRecord\""));
-    assertThat(
-        logs,
-        containsString("className: \"com.datastax.oss.sink.pulsar.RecordCassandraSinkTask\""));
+    if (sinkClassName != null) {
+      assertThat(logs, containsString("typeClassName: \"" + this.valueTypeClassName + "\""));
+      assertThat(logs, containsString("className: \"" + this.sinkClassName + "\""));
+
+    } else {
+      assertThat(
+          logs,
+          containsString("typeClassName: \"org.apache.pulsar.client.api.schema.GenericRecord\""));
+      assertThat(
+          logs,
+          containsString("className: \"com.datastax.oss.sink.pulsar.RecordCassandraSinkTask\""));
+    }
   }
 
   public void dumpLogs() {
     String logs = grabSinkLogs();
     log.info("LOGS: " + logs);
+  }
+
+  public PulsarAdmin getPulsarAdmin() {
+    return pulsarAdmin;
+  }
+
+  public PulsarClient getPulsarClient() {
+    return pulsarClient;
+  }
+
+  public String getTopic() {
+    return topic;
   }
 
   public void close() throws PulsarClientException, PulsarAdminException {
@@ -145,5 +166,13 @@ public class PulsarSinkTester implements AutoCloseable {
     if (pulsarContainer != null) {
       pulsarContainer.close();
     }
+  }
+
+  public void setSinkClassName(String sinkClassName) {
+    this.sinkClassName = sinkClassName;
+  }
+
+  public void setValueTypeClassName(String valueTypeClassName) {
+    this.valueTypeClassName = valueTypeClassName;
   }
 }

@@ -26,6 +26,8 @@ public class RunSinkTest {
     try (PulsarSinkTester tester = new PulsarSinkTester()) {
       tester.start();
       tester.deploySink(new HashMap<>());
+      // the sink will be deployed and fail to connect to Cassandra
+      // we do not care about this fact here
     }
   }
 }

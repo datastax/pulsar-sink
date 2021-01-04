@@ -33,6 +33,7 @@
       <version>${project.version}</version>
       <classifier>nar</classifier>
       <type>nar</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -69,6 +70,32 @@
       <groupId>com.datastax.oss.simulacron</groupId>
       <artifactId>simulacron-native-server</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.datastax.oss</groupId>
+      <artifactId>java-driver-core</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.spotbugs</groupId>
+          <artifactId>spotbugs-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.stephenc.jcip</groupId>
+          <artifactId>jcip-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.javatuples</groupId>
+          <artifactId>javatuples</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.tinkerpop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.reactivestreams</groupId>
+          <artifactId>reactive-streams</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -132,7 +159,7 @@
   </build>
   <profiles>
     <profile>
-      <id>docker</id>
+      <id>medium</id>
       <build>
         <plugins>
           <plugin>
