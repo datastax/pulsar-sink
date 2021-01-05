@@ -42,18 +42,15 @@
         <include>THIRD-PARTY*</include>
       </includes>
     </fileSet>
-    <fileSet>
-      <directory>${project.build.directory}</directory>
-      <outputDirectory>.</outputDirectory>
-      <includes>
-        <include>*.nar</include>
-      </includes>
-    </fileSet>
   </fileSets>
   <files>
     <file>
       <source>${project.basedir}/README_public.md</source>
       <destName>README.md</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/cassandra-enhanced-${project.version}-nar.nar</source>
+      <destName>cassandra-enhanced-${project.version}.nar</destName>
     </file>
   </files>
 </assembly>

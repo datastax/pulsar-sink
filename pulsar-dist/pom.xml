@@ -32,6 +32,10 @@
       <artifactId>cassandra-sink-pulsar</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.datastax.oss</groupId>
+      <artifactId>messaging-connectors-commons-core</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <finalName>cassandra-sink-pulsar-${project.version}</finalName>
