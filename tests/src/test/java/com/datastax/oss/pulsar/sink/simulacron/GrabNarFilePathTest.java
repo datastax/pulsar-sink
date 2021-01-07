@@ -15,6 +15,7 @@
  */
 package com.datastax.oss.pulsar.sink.simulacron;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,7 +36,16 @@ public class GrabNarFilePathTest {
     String narPath = System.getProperty("narFile");
     System.out.println("NAR file: " + narPath);
     assertNotNull(narPath);
-    assertThat(narPath, containsString("com/datastax/oss/cassandra-sink-pulsar-distribution"));
+    // please be aware that depending on how you launch maven
+    // you could see here a file from the reactor (local 'target')
+    // or from the repository (.m2/repository...)
+
+    assertThat(
+        narPath,
+        anyOf(
+            containsString("cassandra-enhanced"),
+            containsString("cassandra-sink-pulsar-distribution")));
+    assertThat(narPath, containsString(".nar"));
     assertTrue(new File(narPath).isFile());
   }
 }
