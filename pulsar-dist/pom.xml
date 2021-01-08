@@ -101,7 +101,7 @@
                 <descriptor>src/assembly/binary-distro.xml</descriptor>
               </descriptors>
               <tarLongFileMode>posix</tarLongFileMode>
-              <finalName>cassandra-enhanced-${project.version}</finalName>
+              <finalName>cassandra-enhanced-pulsar-sink-${project.version}</finalName>
             </configuration>
           </plugin>
           <plugin>
