@@ -21,7 +21,7 @@
   <groupId>com.datastax.oss</groupId>
   <artifactId>pulsar-cassandra-sink-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.5.0-SNAPSHOT</version>
+  <version>1.4.0-SNAPSHOT</version>
   <name>DataStax Apache Cassandra (R) Pulsar Sink Connector</name>
   <description>A Pulsar Sink Connector for pulling data from Apache Pulsar and inserting into Apache Cassandra (R) or DataStax Enterprise (DSE)</description>
   <url>https://github.com/datastax/pulsar-sink</url>
