@@ -38,7 +38,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>cassandra-sink-pulsar-${project.version}</finalName>
+    <finalName>cassandra-enhanced-sink-pulsar-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -58,7 +58,7 @@
         <version>1.3.2</version>
         <extensions>true</extensions>
         <configuration>
-          <finalName>cassandra-enhanced-${project.version}</finalName>
+          <finalName>cassandra-enhanced-pulsar-sink-${project.version}</finalName>
           <classifier>nar</classifier>
         </configuration>
         <executions>

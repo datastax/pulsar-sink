@@ -49,8 +49,8 @@
       <destName>README.md</destName>
     </file>
     <file>
-      <source>${project.build.directory}/cassandra-enhanced-${project.version}-nar.nar</source>
-      <destName>cassandra-enhanced-${project.version}.nar</destName>
+      <source>${project.build.directory}/cassandra-enhanced-pulsar-sink-${project.version}-nar.nar</source>
+      <destName>cassandra-enhanced-pulsar-sink-${project.version}.nar</destName>
     </file>
   </files>
 </assembly>
