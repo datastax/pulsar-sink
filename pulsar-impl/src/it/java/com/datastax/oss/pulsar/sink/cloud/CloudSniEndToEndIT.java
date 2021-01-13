@@ -45,6 +45,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -167,6 +168,19 @@ public class CloudSniEndToEndIT extends ITConnectorBase {
     performInsert(
         DefaultConsistencyLevel.LOCAL_QUORUM,
         parametersWithSecureBundle(configFile.toExternalForm()));
+
+    // then
+    assertThat(logs.getLoggedMessages())
+        .doesNotContain("Cloud deployments reject consistency level");
+  }
+
+  @Test
+  void should_insert_using_base64_encoded_secure_bundle() throws IOException {
+    byte[] secureBundle = Files.readAllBytes(proxy.getSecureBundlePath());
+    String encoded = "base64:" + Base64.getEncoder().encodeToString(secureBundle);
+
+    // when
+    performInsert(DefaultConsistencyLevel.LOCAL_QUORUM, parametersWithSecureBundle(encoded));
 
     // then
     assertThat(logs.getLoggedMessages())
