@@ -30,6 +30,9 @@ import com.datastax.oss.dsbulk.tests.driver.annotations.SessionConfig;
 import com.datastax.oss.pulsar.sink.ccm.EndToEndCCMITBase;
 import com.datastax.oss.sink.pulsar.GenericRecordImpl;
 import com.datastax.oss.sink.pulsar.PulsarRecordImpl;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Tag;
@@ -56,6 +59,41 @@ class SslEndToEndCCMIT extends EndToEndCCMITBase {
             .put(
                 SslConfig.TRUSTSTORE_PATH_OPT,
                 CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_FILE.getAbsolutePath())
+            .put(SslConfig.TRUSTSTORE_PASSWORD_OPT, CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD)
+            .build();
+
+    taskConfigs.add(makeConnectorProperties(extras));
+
+    PulsarRecordImpl record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic",
+            null,
+            new GenericRecordImpl().put("bigint", 5725368L),
+            recordType);
+    runTaskWithRecords(record);
+
+    // Verify that the record was inserted properly in the database.
+    List<Row> results = session.execute("SELECT bigintcol FROM types").all();
+    assertThat(results.size()).isEqualTo(1);
+    Row row = results.get(0);
+    assertThat(row.getLong("bigintcol")).isEqualTo(5725368L);
+  }
+
+  private static String encodeFile(File file) throws Exception {
+    byte[] content = Files.readAllBytes(file.toPath());
+    return "base64:" + Base64.getEncoder().encodeToString(content);
+  }
+
+  @Test
+  void raw_bigint_value_using_base64_encoded_keystore() throws Exception {
+    Map<String, String> extras =
+        ImmutableMap.<String, String>builder()
+            .put(SslConfig.PROVIDER_OPT, "JDK")
+            .put(SslConfig.KEYSTORE_PATH_OPT, encodeFile(CcmBridge.DEFAULT_CLIENT_KEYSTORE_FILE))
+            .put(SslConfig.KEYSTORE_PASSWORD_OPT, CcmBridge.DEFAULT_CLIENT_KEYSTORE_PASSWORD)
+            .put(SslConfig.HOSTNAME_VALIDATION_OPT, "false")
+            .put(
+                SslConfig.TRUSTSTORE_PATH_OPT, encodeFile(CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_FILE))
             .put(SslConfig.TRUSTSTORE_PASSWORD_OPT, CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD)
             .build();
 
@@ -118,6 +156,40 @@ class SslEndToEndCCMIT extends EndToEndCCMITBase {
             .put(
                 SslConfig.TRUSTSTORE_PATH_OPT,
                 CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_FILE.getAbsolutePath())
+            .put(SslConfig.TRUSTSTORE_PASSWORD_OPT, CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD)
+            .build();
+
+    taskConfigs.add(makeConnectorProperties(extras));
+
+    PulsarRecordImpl record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic",
+            null,
+            new GenericRecordImpl().put("bigint", 5725368L),
+            recordType);
+    runTaskWithRecords(record);
+
+    // Verify that the record was inserted properly in the database.
+    List<Row> results = session.execute("SELECT bigintcol FROM types").all();
+    assertThat(results.size()).isEqualTo(1);
+    Row row = results.get(0);
+    assertThat(row.getLong("bigintcol")).isEqualTo(5725368L);
+  }
+
+  @Test
+  void raw_bigint_value_with_openssl_base64_encoded_files() throws Exception {
+    Map<String, String> extras =
+        ImmutableMap.<String, String>builder()
+            .put(SslConfig.PROVIDER_OPT, "OpenSSL")
+            .put(SslConfig.HOSTNAME_VALIDATION_OPT, "false")
+            .put(
+                SslConfig.OPENSSL_KEY_CERT_CHAIN_OPT,
+                encodeFile(CcmBridge.DEFAULT_CLIENT_CERT_CHAIN_FILE))
+            .put(
+                SslConfig.OPENSSL_PRIVATE_KEY_OPT,
+                encodeFile(CcmBridge.DEFAULT_CLIENT_PRIVATE_KEY_FILE))
+            .put(
+                SslConfig.TRUSTSTORE_PATH_OPT, encodeFile(CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_FILE))
             .put(SslConfig.TRUSTSTORE_PASSWORD_OPT, CcmBridge.DEFAULT_CLIENT_TRUSTSTORE_PASSWORD)
             .build();
 

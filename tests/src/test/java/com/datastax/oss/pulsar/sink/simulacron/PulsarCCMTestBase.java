@@ -39,7 +39,7 @@ abstract class PulsarCCMTestBase {
   protected static final Logger log = LoggerFactory.getLogger(PulsarCCMTestBase.class);
   private static final String INSTANCE_NAME = "myinstance";
   private final List<Map<String, Object>> taskConfigs = new ArrayList<>();
-  private final Map<String, Object> connectorProperties;
+  protected final Map<String, Object> connectorProperties;
   protected final CqlSession session;
   private final String keyspaceName;
 
