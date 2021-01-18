@@ -15,6 +15,7 @@
  */
 package com.datastax.oss.pulsar.sink.ccm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -51,6 +52,24 @@ class RawDataEndToEndCCMIT extends EndToEndCCMITBase {
     assertThat(results.size()).isEqualTo(1);
     Row row = results.get(0);
     assertThat(row.getLong("bigintcol")).isEqualTo(5725368L);
+  }
+
+  @Test
+  void raw_bytearray_value_as_string() {
+    // we are treating a byte[] ad a String, in order to support schemaless topics
+    taskConfigs.add(makeConnectorProperties("textcol=value,bigintcol=key"));
+
+    byte[] raw = "foo".getBytes(UTF_8);
+    PulsarRecordImpl record =
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", "123", raw, recordType);
+    runTaskWithRecords(record);
+
+    // Verify that the record was inserted properly in the database.
+    List<Row> results = session.execute("SELECT textcol,bigintcol FROM types").all();
+    assertThat(results.size()).isEqualTo(1);
+    Row row = results.get(0);
+    assertThat(row.getString("textcol")).isEqualTo("foo");
+    assertThat(row.getLong("bigintcol")).isEqualTo(123);
   }
 
   @Test

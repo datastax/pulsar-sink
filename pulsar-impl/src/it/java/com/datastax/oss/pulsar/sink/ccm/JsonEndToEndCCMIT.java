@@ -15,6 +15,7 @@
  */
 package com.datastax.oss.pulsar.sink.ccm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -70,7 +71,7 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
   }
 
   @Test
-  void raw_udt_value_and_cherry_pick_from_json() {
+  void raw_udt_value_and_cherry_pick_from_json_string() {
     taskConfigs.add(makeConnectorProperties("bigintcol=key, udtcol=value, intcol=value.udtmem1"));
 
     PulsarRecordImpl record =
@@ -78,6 +79,34 @@ class JsonEndToEndCCMIT extends EndToEndCCMITBase {
             "persistent://tenant/namespace/mytopic",
             "98761234",
             "{\"udtmem1\": 42, \"udtmem2\": \"the answer\"}",
+            Schema.STRING);
+    runTaskWithRecords(record);
+
+    // Verify that the record was inserted properly in the database.
+    List<Row> results = session.execute("SELECT bigintcol, udtcol, intcol FROM types").all();
+    assertThat(results.size()).isEqualTo(1);
+    Row row = results.get(0);
+    assertThat(row.getLong("bigintcol")).isEqualTo(98761234L);
+
+    UserDefinedType udt =
+        new UserDefinedTypeBuilder(keyspaceName, "myudt")
+            .withField("udtmem1", DataTypes.INT)
+            .withField("udtmem2", DataTypes.TEXT)
+            .build();
+    udt.attach(session.getContext());
+    assertThat(row.getUdtValue("udtcol")).isEqualTo(udt.newValue(42, "the answer"));
+    assertThat(row.getInt("intcol")).isEqualTo(42);
+  }
+
+  @Test
+  void raw_udt_value_and_cherry_pick_from_json_bytearray() {
+    taskConfigs.add(makeConnectorProperties("bigintcol=key, udtcol=value, intcol=value.udtmem1"));
+
+    PulsarRecordImpl record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic",
+            "98761234",
+            "{\"udtmem1\": 42, \"udtmem2\": \"the answer\"}".getBytes(UTF_8),
             Schema.STRING);
     runTaskWithRecords(record);
 

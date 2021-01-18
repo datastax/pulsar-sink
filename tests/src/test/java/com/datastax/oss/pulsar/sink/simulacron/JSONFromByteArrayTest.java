@@ -15,6 +15,7 @@
  */
 package com.datastax.oss.pulsar.sink.simulacron;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -24,32 +25,31 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
-import org.apache.pulsar.client.api.Schema;
 import org.awaitility.Awaitility;
 
-/** Use JSON from a String schema topic */
-public class JSONFromStringTest extends PulsarCCMTestBase {
+/** Use JSON from a schema less topic */
+public class JSONFromByteArrayTest extends PulsarCCMTestBase {
 
-  public JSONFromStringTest(CCMCluster ccm, CqlSession session) throws Exception {
+  public JSONFromByteArrayTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
   }
 
   @Override
   protected void preparePulsarSinkTester(PulsarSinkTester pulsarSink) {
     pulsarSink.setSinkClassName("com.datastax.oss.sink.pulsar.StringCassandraSinkTask");
-    pulsarSink.setValueTypeClassName("java.lang.String");
+    pulsarSink.setValueTypeClassName(byte[].class.getName());
   }
 
   @Override
   protected void performTest(final PulsarSinkTester pulsarSink) throws PulsarClientException {
     // please note that we are setting the Schema AFTER the creation of the Sink
-    try (Producer<String> producer =
+    try (Producer<byte[]> producer =
         pulsarSink
             .getPulsarClient()
-            .newProducer(Schema.STRING)
+            .newProducer() // no schema
             .topic(pulsarSink.getTopic())
             .create()) {
-      producer.newMessage().key("838").value("{\"field1\":\"value1\"}").send();
+      producer.newMessage().key("838").value("{\"field1\":\"value1\"}".getBytes(UTF_8)).send();
     }
     try {
       Awaitility.waitAtMost(1, TimeUnit.MINUTES)
