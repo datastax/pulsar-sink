@@ -24,4 +24,8 @@ import org.apache.pulsar.io.core.annotations.IOType;
   help = "DataStax Pulsar Sink is used for moving messages from Pulsar to Cassandra",
   configClass = PulsarSinkConfig.class
 )
-public class StringCassandraSinkTask extends CassandraSinkTask<String> {}
+public class StringCassandraSinkTask extends CassandraSinkTask<byte[]> {
+  // please note that we use byte[] and not String
+  // because if you use String the Consumer will request a Schema to
+  // be attached to the topic
+}

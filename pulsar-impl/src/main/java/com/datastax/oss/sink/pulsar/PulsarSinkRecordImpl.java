@@ -15,6 +15,8 @@
  */
 package com.datastax.oss.sink.pulsar;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkRecordHeader;
@@ -83,7 +85,11 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
     if (record.getValue() instanceof GenericRecord) {
       return PulsarStruct.ofRecord((Record<GenericRecord>) record, schemaRegistry);
     } else {
-      return record.getValue();
+      Object value = record.getValue();
+      if (value instanceof byte[]) {
+        value = new String((byte[]) value, UTF_8);
+      }
+      return value;
     }
   }
 
