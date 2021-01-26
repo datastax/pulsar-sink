@@ -5,11 +5,11 @@ DataStax Astra or DataStax Enterprise (DSE) tables.
 
 ## Installation
 
-To download and install this connector please follow the procedure detailed [here](https://docs.datastax.com/en/pulsar-sink/doc/install/pulsarSinkInstall.html).
+To download and install this connector please follow the procedure detailed [here](https://docs.datastax.com/en/pulsar-connector/1.4/pulsarInstall.html).
 
 ## Documentation
 
-All documentation is available online [here](https://docs.datastax.com/en/pulsar-sink/doc/index.html).
+All documentation is available online [here](https://docs.datastax.com/en/pulsar-connector/1.4/index.html).
 
 ## Building from the sources
 
@@ -43,4 +43,4 @@ To do so please follow those steps:
 ## Mapping specification
 
 To see practical examples and usages of mapping, see:
-https://docs.datastax.com/en/pulsar-sink/doc/search.html?searchQuery=mapping 
+https://docs.datastax.com/en/pulsar-connector/1.4/cfgPulsarMapTopicTable.html
