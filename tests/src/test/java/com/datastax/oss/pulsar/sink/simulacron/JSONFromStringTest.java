@@ -37,7 +37,7 @@ public class JSONFromStringTest extends PulsarCCMTestBase {
   @Override
   protected void preparePulsarSinkTester(PulsarSinkTester pulsarSink) {
     pulsarSink.setSinkClassName("com.datastax.oss.sink.pulsar.StringCassandraSinkTask");
-    pulsarSink.setValueTypeClassName("java.lang.String");
+    pulsarSink.setValueTypeClassName(byte[].class.getName());
   }
 
   @Override
