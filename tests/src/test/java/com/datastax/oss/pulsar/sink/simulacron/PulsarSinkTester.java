@@ -82,8 +82,22 @@ public class PulsarSinkTester implements AutoCloseable {
   }
 
   private String grabSinkLogs() {
-    String fileName =
-        "/tmp/functions/" + tenant + "/" + namespace + "/" + sinkname + "/" + sinkname + "-0.log";
+    String fileName;
+    if (IMAGE_VERSION.startsWith("2.6")) {
+      fileName =
+          "/tmp/functions/" + tenant + "/" + namespace + "/" + sinkname + "/" + sinkname + "-0.log";
+    } else {
+      fileName =
+          "/pulsar/logs/functions/"
+              + tenant
+              + "/"
+              + namespace
+              + "/"
+              + sinkname
+              + "/"
+              + sinkname
+              + "-0.log";
+    }
     log.info("Log file: " + fileName);
     StringBuilder buffer = new StringBuilder();
     pulsarContainer.copyFileFromContainer(
