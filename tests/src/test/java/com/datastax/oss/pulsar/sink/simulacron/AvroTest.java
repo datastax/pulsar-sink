@@ -46,7 +46,7 @@ public class AvroTest extends PulsarCCMTestBase {
       producer.newMessage().key("838").value(new MyBean("value1")).send();
     }
     try {
-      Awaitility.waitAtMost(1, TimeUnit.MINUTES)
+      Awaitility.waitAtMost(2, TimeUnit.MINUTES)
           .pollDelay(1, TimeUnit.SECONDS)
           .until(
               () -> {
