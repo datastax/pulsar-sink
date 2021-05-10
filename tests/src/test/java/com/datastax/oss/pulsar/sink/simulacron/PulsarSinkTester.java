@@ -43,7 +43,7 @@ public class PulsarSinkTester implements AutoCloseable {
 
   private static final String IMAGE_NAME =
       System.getProperty("pulsar.image", "apachepulsar/pulsar");
-  private static final String IMAGE_VERSION = System.getProperty("pulsar.image.version", "2.6.2");
+  private static final String IMAGE_VERSION = System.getProperty("pulsar.image.version", "2.7.1");
 
   //  private static final String IMAGE_NAME = "datastax/pulsar-all";
   //  private static final String IMAGE_VERSION = "latest";
@@ -136,14 +136,23 @@ public class PulsarSinkTester implements AutoCloseable {
     List<String> sinks = pulsarAdmin.sinks().listSinks(tenant, namespace);
     log.info("sinks:" + sinks);
     assertTrue(sinks.contains(sinkname));
-    Thread.sleep(5000);
-    String logs = grabSinkLogs();
-    log.info("LOGS: " + logs);
+    for (int i = 0; i < 120; i++) {
+      Thread.sleep(1000);
+      try {
+        String logs = grabSinkLogs();
+        log.info("#" + i + " LOGS: " + logs);
+        if (logs.contains("typeClassName:")) {
+          break;
+        }
+      } catch (Exception err) {
+        log.info("Error getting logs " + err);
+      }
+    }
 
+    String logs = grabSinkLogs();
     if (sinkClassName != null) {
       assertThat(logs, containsString("typeClassName: \"" + this.valueTypeClassName + "\""));
       assertThat(logs, containsString("className: \"" + this.sinkClassName + "\""));
-
     } else {
       assertThat(
           logs,
