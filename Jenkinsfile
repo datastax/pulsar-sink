@@ -46,7 +46,13 @@ def buildAndExecuteTests() {
     jabba use ${JABBA_VERSION}
 
     if [ "${RUN_LONG_TESTS}" = "true" ]; then
-      mavenArgs="$mavenArgs -Pmedium"
+      PREV_IFS=$IFS
+      IFS=':'
+      read -ra PULSAR_FULL_IMAGE <<< "${PULSAR_VERSION}"
+      IFS=$PREV_IFS
+      PULSAR_IMAGE=${PULSAR_FULL_IMAGE[0]}
+      PULSAR_IMAGE_VERSION=${PULSAR_FULL_IMAGE[1]}
+      mavenArgs="$mavenArgs -Pmedium -Dpulsar.image=$PULSAR_IMAGE -Dpulsar.image.version=$PULSAR_IMAGE_VERSION"
     fi
     if [ "${GENERATE_DISTRO}" = "true" ]; then
       mavenArgs="$mavenArgs -Prelease -Dgpg.skip=true"
@@ -229,6 +235,10 @@ pipeline {
             name 'CASSANDRA_VERSION'
             values '3.11'
           }
+          axis {
+              name 'PULSAR_VERSION'
+              values 'apachepulsar/pulsar:2.7.3'
+          }
         }
         agent {
           label "${OS_VERSION}"
@@ -296,6 +306,14 @@ pipeline {
                    'dse-6.7',  // Previous DataStax Enterprise
                    'dse-6.8'   // Current DataStax Enterprise
           }
+          axis {
+            name 'PULSAR_VERSION'
+            values 'apachepulsar/pulsar:2.7.3',                         // Apache 2.7
+                   'apachepulsar/pulsar:2.8.1',                         // Apache 2.8
+                   'harbor.sjc.dsinternal.org/pulsar/pulsar:latest',    // Apache Master
+                   'datastax/lunastreaming:2.7.2_1.1.6',                // DataStax LunaStreaming 2.7
+                   'datastax/lunastreaming:2.8.0_1.1.5'                 // DataStax LunaStreaming 2.8
+            }
         }
         agent {
           label "${env.OS_VERSION}"
