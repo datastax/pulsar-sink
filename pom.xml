@@ -33,6 +33,7 @@
   <modules>
     <module>pulsar-impl</module>
     <module>pulsar-dist</module>
+    <module>pulsar-dist-2.7</module>
     <module>tests</module>
   </modules>
   <properties>
@@ -45,7 +46,7 @@
     <oss.driver.version>4.6.0</oss.driver.version>
     <dsbulk.version>1.6.0</dsbulk.version>
     <reactive-streams.version>1.0.3</reactive-streams.version>
-    <pulsar.version>2.6.2</pulsar.version>
+    <pulsar.version>2.8.2</pulsar.version>
     <slf4j.version>1.7.25</slf4j.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>5.4.1</junit.version>

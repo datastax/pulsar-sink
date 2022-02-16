@@ -42,6 +42,20 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>com.datastax.oss</groupId>
+      <artifactId>cassandra-sink-pulsar-distribution-2.7</artifactId>
+      <version>${project.version}</version>
+      <classifier>nar</classifier>
+      <type>nar</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-client-original</artifactId>
       <scope>test</scope>
@@ -167,6 +181,20 @@
             <configuration>
               <skipTests>false</skipTests>
               <argLine>-DnarFile=${com.datastax.oss:cassandra-sink-pulsar-distribution:nar:nar}</argLine>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>medium-2.7</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skipTests>false</skipTests>
+              <argLine>-DnarFile=${com.datastax.oss:cassandra-sink-pulsar-distribution-2.7:nar:nar} -Dpulsar.image.version=2.7.4</argLine>
             </configuration>
           </plugin>
         </plugins>
