@@ -308,11 +308,10 @@ pipeline {
           }
           axis {
             name 'PULSAR_VERSION'
-            values 'apachepulsar/pulsar:2.7.3',                         // Apache 2.7
-                   'apachepulsar/pulsar:2.8.1',                         // Apache 2.8
+                   'apachepulsar/pulsar:2.8.2',                         // Apache 2.8
+                   'apachepulsar/pulsar:2.9.1',                         // Apache 2.9
                    'harbor.sjc.dsinternal.org/pulsar/pulsar:latest',    // Apache Master
-                   'datastax/lunastreaming:2.7.2_1.1.6',                // DataStax LunaStreaming 2.7
-                   'datastax/lunastreaming:2.8.0_1.1.5'                 // DataStax LunaStreaming 2.8
+                   'datastax/lunastreaming:2.8.0_1.1.22'                 // DataStax LunaStreaming 2.8
             }
         }
         agent {
