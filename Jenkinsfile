@@ -237,7 +237,7 @@ pipeline {
           }
           axis {
               name 'PULSAR_VERSION'
-              values 'apachepulsar/pulsar:2.7.3'
+              values 'apachepulsar/pulsar:2.8.2'
           }
         }
         agent {
