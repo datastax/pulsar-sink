@@ -43,7 +43,7 @@ public class PulsarSinkTester implements AutoCloseable {
 
   private static final String IMAGE_NAME =
       System.getProperty("pulsar.image", "apachepulsar/pulsar");
-  private static final String IMAGE_VERSION = System.getProperty("pulsar.image.version", "2.7.3");
+  private static final String IMAGE_VERSION = System.getProperty("pulsar.image.version", "2.8.2");
 
   //  private static final String IMAGE_NAME = "datastax/pulsar-all";
   //  private static final String IMAGE_VERSION = "latest";
