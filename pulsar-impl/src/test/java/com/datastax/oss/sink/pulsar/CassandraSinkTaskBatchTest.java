@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
@@ -46,8 +47,8 @@ class CassandraSinkTaskBatchTest {
   private CassandraSinkTask sinkTask;
   private InstanceState instanceState;
   private Record<GenericRecord> record;
-  private volatile Runnable beforeFlush = () -> {};
-  private volatile Runnable afterFlush = () -> {};
+  private final AtomicReference<Runnable> beforeFlush = new AtomicReference<>();
+  private final AtomicReference<Runnable> afterFlush = new AtomicReference<>();
   private volatile Consumer<List<AbstractSinkRecord>> processorCallback = (list) -> {};
 
   @BeforeEach
@@ -57,11 +58,18 @@ class CassandraSinkTaskBatchTest {
           @Override
           protected void flush() {
             try {
-              beforeFlush.run();
-              beforeFlush = () -> {};
+              final Runnable before = beforeFlush.get();
+              beforeFlush.set(null);
+              if (before != null) {
+                before.run();
+              }
               super.flush();
-              afterFlush.run();
-              afterFlush = () -> {};
+
+              final Runnable after = afterFlush.get();
+              afterFlush.set(null);
+              if (after != null) {
+                after.run();
+              }
             } catch (Throwable t) {
               t.printStackTrace();
               throw new RuntimeException(t);
@@ -102,15 +110,15 @@ class CassandraSinkTaskBatchTest {
     {
       CompletableFuture<List<?>> flushResult = new CompletableFuture<>();
       CompletableFuture<List<?>> afterFlushResult = new CompletableFuture<>();
-      beforeFlush =
+      beforeFlush.set(
           () -> {
             // flush always happens in a separate thread
             flushResult.complete(sinkTask.getIncomingList());
-          };
-      afterFlush =
+          });
+      afterFlush.set(
           () -> {
             afterFlushResult.complete(sinkTask.getIncomingList());
-          };
+          });
       sinkTask.setBatchSize(1);
       sinkTask.write(record);
       assertEquals(1, flushResult.get(10, TimeUnit.SECONDS).size());
@@ -128,14 +136,14 @@ class CassandraSinkTaskBatchTest {
     {
       CompletableFuture<List<?>> flushResult = new CompletableFuture<>();
       CompletableFuture<List<?>> afterFlushResult = new CompletableFuture<>();
-      beforeFlush =
+      beforeFlush.set(
           () -> {
             flushResult.complete(sinkTask.getIncomingList());
-          };
-      afterFlush =
+          });
+      afterFlush.set(
           () -> {
             afterFlushResult.complete(sinkTask.getIncomingList());
-          };
+          });
       sinkTask.write(record);
       sinkTask.write(record);
       sinkTask.write(record);
