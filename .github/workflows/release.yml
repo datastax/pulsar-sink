@@ -20,6 +20,6 @@ jobs:
         run: mvn -B package -DskipTests
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "pulsar-dist/**/*.nar,pulsar-dist/**/*.asc"
+          artifacts: "pulsar-dist/target/*.nar,pulsar-dist/target/*.nar.asc,pulsar-dist/target/*.tar.gz,pulsar-dist/target/*.tar.gz.asc"
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: true
