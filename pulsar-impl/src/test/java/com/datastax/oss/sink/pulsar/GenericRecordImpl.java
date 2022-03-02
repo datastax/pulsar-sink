@@ -26,13 +26,22 @@ import org.apache.pulsar.client.api.schema.GenericRecord;
 public class GenericRecordImpl implements GenericRecord {
   private final Map<String, Object> values;
   private final List<Field> fields;
+  private final Object nativeObject;
 
   public GenericRecordImpl() {
+    this(null);
+  }
+
+  public GenericRecordImpl(Object nativeObject) {
     this.values = new LinkedHashMap<>(); // we want predictable output for integration tests
     this.fields = new ArrayList<>();
+    this.nativeObject = nativeObject;
   }
 
   public GenericRecordImpl put(String name, Object value) {
+    if (nativeObject != null) {
+      throw new IllegalStateException();
+    }
     if (values.put(name, value) == null) {
       fields.add(new Field(name, values.size()));
     }
@@ -55,7 +64,16 @@ public class GenericRecordImpl implements GenericRecord {
   }
 
   @Override
+  public Object getNativeObject() {
+    return nativeObject;
+  }
+
+  @Override
   public String toString() {
-    return "GenericRecordImpl{" + "values=" + values + '}';
+    if (nativeObject != null) {
+      return "GenericRecordImpl{" + "nativeObject=" + nativeObject + '}';
+    } else {
+      return "GenericRecordImpl{" + "values=" + values + '}';
+    }
   }
 }

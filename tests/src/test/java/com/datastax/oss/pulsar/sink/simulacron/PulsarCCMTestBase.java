@@ -43,8 +43,14 @@ abstract class PulsarCCMTestBase {
   protected final CqlSession session;
   private final String keyspaceName;
 
+  private static final String DEFAULT_MAPPING = "a=key, b=value.field1";
+
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
+    this(ccm, session, DEFAULT_MAPPING);
+  }
+
+  PulsarCCMTestBase(CCMCluster ccm, CqlSession session, String mapping) throws Exception {
     this.session = session;
     int port = ccm.getBinaryPort();
     // https://www.testcontainers.org/features/networking/
@@ -66,8 +72,7 @@ abstract class PulsarCCMTestBase {
     connectorProperties.put("port", ccm.getBinaryPort());
     connectorProperties.put("batchSize", "1");
     connectorProperties.put("loadBalancing.localDc", ccm.getDC(1));
-    connectorProperties.put(
-        "topic.mytopic." + keyspaceName + ".table1.mapping", "a=key, b=value.field1");
+    connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
   @Test
@@ -90,6 +95,23 @@ abstract class PulsarCCMTestBase {
   protected abstract void performTest(final PulsarSinkTester pulsarSink) throws Exception;
 
   protected void preparePulsarSinkTester(PulsarSinkTester pulsarSink) {}
+
+  public static final class MyKey {
+
+    private int fieldKey;
+
+    public MyKey(int fieldKey) {
+      this.fieldKey = fieldKey;
+    }
+
+    public int getFieldKey() {
+      return fieldKey;
+    }
+
+    public void setFieldKey(int fieldKey) {
+      this.fieldKey = fieldKey;
+    }
+  }
 
   public static final class MyBean {
 

@@ -21,18 +21,52 @@ import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkRecordHeader;
 import java.util.stream.Collectors;
+import org.apache.pulsar.client.api.Schema;
+import org.apache.pulsar.client.api.schema.GenericObject;
 import org.apache.pulsar.client.api.schema.GenericRecord;
+import org.apache.pulsar.client.api.schema.KeyValueSchema;
+import org.apache.pulsar.common.schema.KeyValue;
 import org.apache.pulsar.functions.api.Record;
 
 /** @author enrico.olivelli */
 public class PulsarSinkRecordImpl implements AbstractSinkRecord {
   private static final String PARTITIONED_TOPIC_SUFFIX = "-partition-";
   private final Record<?> record;
+  private final Object key;
+  private final Schema keySchema;
+  private final Object value;
+  private final Schema valueSchema;
   private final LocalSchemaRegistry schemaRegistry;
 
   public PulsarSinkRecordImpl(Record<?> record, LocalSchemaRegistry schemaRegistry) {
     this.record = record;
     this.schemaRegistry = schemaRegistry;
+    Object payload = record.getValue();
+    Schema<?> schema = record.getSchema();
+
+    if (schema instanceof KeyValueSchema
+        && payload instanceof GenericObject
+        && ((GenericObject) payload).getNativeObject() instanceof KeyValue) {
+      KeyValue kv = (KeyValue) ((GenericObject) payload).getNativeObject();
+      KeyValueSchema kvSchema = (KeyValueSchema) schema;
+      this.value = kv.getValue();
+      this.key = kv.getKey();
+      this.valueSchema = kvSchema.getValueSchema();
+      this.keySchema = kvSchema.getKeySchema();
+    } else {
+      this.key = record.getKey().orElse(null);
+      this.keySchema = Schema.STRING;
+      this.valueSchema = schema;
+
+      // unwrap simple schemas, wrapped by GenericObject
+      if (payload instanceof GenericObject
+          && ((((GenericObject) payload).getNativeObject() instanceof String)
+              || (((GenericObject) payload).getNativeObject() instanceof byte[]))) {
+        this.value = ((GenericObject) payload).getNativeObject();
+      } else {
+        this.value = payload;
+      }
+    }
   }
 
   @Override
@@ -75,22 +109,27 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
     }
   }
 
+  private Object unwrap(Object o, Schema schema) {
+    if (o instanceof GenericRecord) {
+      return PulsarStruct.ofRecord(
+          (GenericRecord) o, schema, record.getTopicName(), record.getEventTime(), schemaRegistry);
+    } else {
+      if (o instanceof byte[]) {
+        return new String((byte[]) o, UTF_8);
+      } else {
+        return o;
+      }
+    }
+  }
+
   @Override
   public Object key() {
-    return record.getKey().orElse(null);
+    return unwrap(key, keySchema);
   }
 
   @Override
   public Object value() {
-    if (record.getValue() instanceof GenericRecord) {
-      return PulsarStruct.ofRecord((Record<GenericRecord>) record, schemaRegistry);
-    } else {
-      Object value = record.getValue();
-      if (value instanceof byte[]) {
-        value = new String((byte[]) value, UTF_8);
-      }
-      return value;
-    }
+    return unwrap(value, valueSchema);
   }
 
   @Override

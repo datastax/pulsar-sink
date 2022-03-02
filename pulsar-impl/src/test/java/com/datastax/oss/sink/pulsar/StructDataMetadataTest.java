@@ -59,7 +59,7 @@ class StructDataMetadataTest {
 
   private final LocalSchemaRegistry registry = new LocalSchemaRegistry();
   private final StructDataMetadata metadata =
-      new StructDataMetadata(registry.ensureAndUpdateSchema(record));
+      new StructDataMetadata(registry.ensureAndUpdateSchemaFromStruct(record));
 
   @Test
   void should_translate_field_types() {

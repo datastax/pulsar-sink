@@ -19,6 +19,7 @@ import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractStruct;
 import com.datastax.oss.common.sink.util.SinkUtil;
 import java.util.Optional;
+import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
 
@@ -49,24 +50,26 @@ public class PulsarStruct implements AbstractStruct {
 
   public static PulsarStruct ofRecord(
       Record<GenericRecord> record, LocalSchemaRegistry schemaRegistry) {
-    PulsarSchema schema = schemaRegistry.ensureAndUpdateSchema(record);
-    String path = LocalSchemaRegistry.computeRecordSchemaPath(record);
-    return new PulsarStruct(record, schema, path, schemaRegistry);
+    return ofRecord(
+        record.getValue(),
+        record.getSchema(),
+        record.getTopicName(),
+        record.getEventTime(),
+        schemaRegistry);
   }
 
-  public PulsarStruct(
-      Record<GenericRecord> record,
-      PulsarSchema schema,
-      String path,
+  public static PulsarStruct ofRecord(
+      GenericRecord value,
+      Schema schema,
+      Optional<String> topicName,
+      Optional<Long> eventTime,
       LocalSchemaRegistry schemaRegistry) {
-    this.record = record.getValue();
-    this.eventTime = record.getEventTime();
-    this.schemaRegistry = schemaRegistry;
-    this.schema = schema;
-    this.path = path;
+    String path = LocalSchemaRegistry.computeRecordSchemaPath(schema, topicName);
+    PulsarSchema pulsarSchema = schemaRegistry.ensureAndUpdateSchema(path, value);
+    return new PulsarStruct(value, eventTime, pulsarSchema, path, schemaRegistry);
   }
 
-  public PulsarStruct(
+  private PulsarStruct(
       GenericRecord record,
       Optional<Long> eventTime,
       PulsarSchema schema,

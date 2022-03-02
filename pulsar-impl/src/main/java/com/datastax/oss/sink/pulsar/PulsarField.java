@@ -38,4 +38,9 @@ public final class PulsarField implements AbstractField {
   public AbstractSchema schema() {
     return schema;
   }
+
+  @Override
+  public String toString() {
+    return "{name=" + name + ", schema=" + schema + "}";
+  }
 }

@@ -65,7 +65,7 @@ public class PulsarSinkTester implements AutoCloseable {
                 DockerImageName.parse(IMAGE_NAME)
                     .withTag(IMAGE_VERSION)
                     .asCompatibleSubstituteFor("apachepulsar/pulsar"))
-            .withCommand("bin/pulsar", "standalone") // default one disables worker
+            .withCommand("bin/pulsar", "standalone", "-nss") // default one disables worker
             // not a log, as it keeps output compact without additional config - good for debug,
             // not really good for real tests
             .withLogConsumer(outputFrame -> System.out.print(outputFrame.getUtf8String()))

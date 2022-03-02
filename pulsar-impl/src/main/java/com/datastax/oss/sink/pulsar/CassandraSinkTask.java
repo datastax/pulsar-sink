@@ -173,6 +173,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
       log.info("received {} with headers {}", record, record.getProperties());
       if (rawvalue instanceof GenericRecord) {
         GenericRecord value = (GenericRecord) rawvalue;
+        log.info("received GenericRecord {} native object {}", record, value.getNativeObject());
         for (Field field : value.getFields()) {
           Object v = value.getField(field);
           String clazz = v != null ? v.getClass().toGenericString() : "";
