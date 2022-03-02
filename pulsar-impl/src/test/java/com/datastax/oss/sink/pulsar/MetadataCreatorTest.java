@@ -21,9 +21,15 @@ import com.datastax.oss.common.sink.metadata.InnerDataAndMetadata;
 import com.datastax.oss.common.sink.metadata.MetadataCreator;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.type.PrimitiveType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
+import org.apache.pulsar.common.schema.KeyValue;
+import org.apache.pulsar.common.schema.KeyValueEncodingType;
 import org.apache.pulsar.functions.api.Record;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +59,19 @@ class MetadataCreatorTest {
     }
   }
 
+  public static class MyKey {
+
+    int pk;
+
+    public int getPk() {
+      return pk;
+    }
+
+    public void setPk(int pk) {
+      this.pk = pk;
+    }
+  }
+
   @Test
   void shouldCreateMetadataForStruct() throws IOException {
     // given
@@ -76,5 +95,121 @@ class MetadataCreatorTest {
         .isEqualTo(GenericType.STRING);
     assertThat(innerDataAndMetadata.getInnerMetadata().getFieldType("age", CQL_TYPE))
         .isEqualTo(GenericType.INTEGER);
+  }
+
+  @Test
+  void shouldCreateMetadataForKeyValue() throws IOException {
+    // given
+    Schema keySchema = Schema.AVRO(MyKey.class);
+    Schema valueSchema = Schema.AVRO(MyPojo.class);
+    Schema schema = Schema.KeyValue(keySchema, valueSchema, KeyValueEncodingType.SEPARATED);
+    GenericRecord keyObject = new GenericRecordImpl().put("pk", 15);
+    GenericRecord valueObject = new GenericRecordImpl().put("name", "Bobby McGee").put("age", 21);
+    GenericRecord object = new GenericRecordImpl(new KeyValue<>(keyObject, valueObject));
+    Record<GenericRecord> record =
+        new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, object, schema);
+
+    LocalSchemaRegistry localSchemaRegistry = new LocalSchemaRegistry();
+    PulsarSinkRecordImpl pulsarSinkRecordImpl =
+        new PulsarSinkRecordImpl(record, localSchemaRegistry);
+
+    InnerDataAndMetadata innerDataAndMetadataValue =
+        MetadataCreator.makeMeta(pulsarSinkRecordImpl.value());
+
+    InnerDataAndMetadata innerDataAndMetadataKey =
+        MetadataCreator.makeMeta(pulsarSinkRecordImpl.key());
+
+    // then
+
+    assertThat(innerDataAndMetadataKey.getInnerData().getFieldValue("pk")).isEqualTo(15);
+    assertThat(innerDataAndMetadataKey.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataKey.getInnerMetadata().getFieldType("pk", CQL_TYPE))
+        .isEqualTo(GenericType.INTEGER);
+
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("name"))
+        .isEqualTo("Bobby McGee");
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("age")).isEqualTo(21);
+    assertThat(innerDataAndMetadataValue.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("name", CQL_TYPE))
+        .isEqualTo(GenericType.STRING);
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("age", CQL_TYPE))
+        .isEqualTo(GenericType.INTEGER);
+  }
+
+  @Test
+  void shouldCreateMetadataForStringTopicJsonEncodedValueJsonEncodedString() throws IOException {
+    // given
+    Schema schema = Schema.STRING;
+    GenericRecord object = new GenericRecordImpl("{\"name\":\"Bobby McGee\",\"age\":21}");
+    Record<GenericRecord> record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic", "{\"pk\":15}", object, schema);
+
+    LocalSchemaRegistry localSchemaRegistry = new LocalSchemaRegistry();
+    PulsarSinkRecordImpl pulsarSinkRecordImpl =
+        new PulsarSinkRecordImpl(record, localSchemaRegistry);
+
+    InnerDataAndMetadata innerDataAndMetadataValue =
+        MetadataCreator.makeMeta(pulsarSinkRecordImpl.value());
+
+    InnerDataAndMetadata innerDataAndMetadataKey =
+        MetadataCreator.makeMeta(pulsarSinkRecordImpl.key());
+
+    // then
+
+    assertThat(innerDataAndMetadataKey.getInnerData().getFieldValue("pk"))
+        .isEqualTo(IntNode.valueOf(15));
+    assertThat(innerDataAndMetadataKey.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataKey.getInnerMetadata().getFieldType("pk", CQL_TYPE))
+        .isEqualTo(GenericType.of(JsonNode.class));
+
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("name"))
+        .isEqualTo(TextNode.valueOf("Bobby McGee"));
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("age"))
+        .isEqualTo(IntNode.valueOf(21));
+    assertThat(innerDataAndMetadataValue.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("name", CQL_TYPE))
+        .isEqualTo(GenericType.of(JsonNode.class));
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("age", CQL_TYPE))
+        .isEqualTo(GenericType.of(JsonNode.class));
+  }
+
+  @Test
+  void shouldCreateMetadataForStringTopicJsonEncodedValueJsonEncodedStringAsByteArray()
+      throws IOException {
+    // given
+    Schema schema = Schema.BYTES;
+    byte[] object = "{\"name\":\"Bobby McGee\",\"age\":21}".getBytes(StandardCharsets.UTF_8);
+    Record<GenericRecord> record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic", "{\"pk\":15}", object, schema);
+
+    LocalSchemaRegistry localSchemaRegistry = new LocalSchemaRegistry();
+    PulsarSinkRecordImpl pulsarSinkRecordImpl =
+        new PulsarSinkRecordImpl(record, localSchemaRegistry);
+
+    InnerDataAndMetadata innerDataAndMetadataValue =
+        MetadataCreator.makeMeta(pulsarSinkRecordImpl.value());
+
+    InnerDataAndMetadata innerDataAndMetadataKey =
+        MetadataCreator.makeMeta(pulsarSinkRecordImpl.key());
+
+    // then
+
+    assertThat(innerDataAndMetadataKey.getInnerData().getFieldValue("pk"))
+        .isEqualTo(IntNode.valueOf(15));
+    assertThat(innerDataAndMetadataKey.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataKey.getInnerMetadata().getFieldType("pk", CQL_TYPE))
+        .isEqualTo(GenericType.of(JsonNode.class));
+
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("name"))
+        .isEqualTo(TextNode.valueOf("Bobby McGee"));
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("age"))
+        .isEqualTo(IntNode.valueOf(21));
+    assertThat(innerDataAndMetadataValue.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("name", CQL_TYPE))
+        .isEqualTo(GenericType.of(JsonNode.class));
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("age", CQL_TYPE))
+        .isEqualTo(GenericType.of(JsonNode.class));
   }
 }

@@ -27,17 +27,13 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.awaitility.Awaitility;
 
-/** Use JSON from a String schema topic */
-public class JSONFromStringTest extends PulsarCCMTestBase {
+/** Use JSON from a String schema topic, key and value as encoded in JSON by the user */
+public class JSONFromStringTaskTest extends PulsarCCMTestBase {
 
-  public JSONFromStringTest(CCMCluster ccm, CqlSession session) throws Exception {
-    super(ccm, session);
-  }
+  private static final String MAPPING = "a=key.fieldKey, b=value.field1";
 
-  @Override
-  protected void preparePulsarSinkTester(PulsarSinkTester pulsarSink) {
-    pulsarSink.setSinkClassName("com.datastax.oss.sink.pulsar.StringCassandraSinkTask");
-    pulsarSink.setValueTypeClassName(byte[].class.getName());
+  public JSONFromStringTaskTest(CCMCluster ccm, CqlSession session) throws Exception {
+    super(ccm, session, MAPPING);
   }
 
   @Override
@@ -49,7 +45,7 @@ public class JSONFromStringTest extends PulsarCCMTestBase {
             .newProducer(Schema.STRING)
             .topic(pulsarSink.getTopic())
             .create()) {
-      producer.newMessage().key("838").value("{\"field1\":\"value1\"}").send();
+      producer.newMessage().key("{\"fieldKey\":838}").value("{\"field1\":\"value1\"}").send();
     }
     try {
       Awaitility.waitAtMost(1, TimeUnit.MINUTES)

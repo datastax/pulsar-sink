@@ -98,7 +98,7 @@ public class PulsarSchemaTest {
     PulsarRecordImpl record =
         new PulsarRecordImpl(
             "persistent://tenant/namespace/topic", null, genericRecord, genericSchema);
-    PulsarSchema schema = registry.ensureAndUpdateSchema(record);
+    PulsarSchema schema = registry.ensureAndUpdateSchemaFromStruct(record);
     PulsarStruct struct = PulsarStruct.ofRecord(record, registry);
     assertSame(schema, struct.schema());
     assertSame(PulsarSchema.STRING, schema.keySchema());
@@ -133,7 +133,7 @@ public class PulsarSchemaTest {
     PulsarRecordImpl record =
         new PulsarRecordImpl(
             "persistent://tenant/namespace/topic", null, genericRecord, genericSchema);
-    PulsarSchema schema = registry.ensureAndUpdateSchema(record);
+    PulsarSchema schema = registry.ensureAndUpdateSchemaFromStruct(record);
     PulsarStruct struct = PulsarStruct.ofRecord(record, registry);
     assertSame(schema, struct.schema());
     assertSame(PulsarSchema.STRING, schema.keySchema());
@@ -152,7 +152,7 @@ public class PulsarSchemaTest {
 
     PulsarSchema nestedStructSchemaByPath =
         registry.getAtPath(
-            "persistent://tenant/namespace/topic{\"type\":\"record\",\"name\":\"type\",\"fields\":[{\"name\":\"test\",\"type\":\"int\"},{\"name\":\"testNestedStruct\",\"type\":{\"type\":\"record\",\"name\":\"typeNested\",\"fields\":[{\"name\":\"testnested\",\"type\":\"long\"}]}},{\"name\":\"testNestedStruct2\",\"type\":\"typeNested\"}]}.testNestedStruct");
+            "persistent://tenant/namespace/topic_{\"type\":\"record\",\"name\":\"type\",\"fields\":[{\"name\":\"test\",\"type\":\"int\"},{\"name\":\"testNestedStruct\",\"type\":{\"type\":\"record\",\"name\":\"typeNested\",\"fields\":[{\"name\":\"testnested\",\"type\":\"long\"}]}},{\"name\":\"testNestedStruct2\",\"type\":\"typeNested\"}]}.testNestedStruct");
     assertSame(nestedStructSchemaByPath, nestedStructSchema);
   }
 }
