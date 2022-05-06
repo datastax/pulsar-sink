@@ -312,7 +312,7 @@ pipeline {
             values 'apachepulsar/pulsar:2.8.3',                         // Apache 2.8
                    'apachepulsar/pulsar:2.10.0',                         // Apache 2.10.0
                    'harbor.sjc.dsinternal.org/pulsar/pulsar:latest',    // Apache Master
-                   'datastax/lunastreaming:2.8.0_1.1.42'                 // DataStax LunaStreaming 2.8
+                   'datastax/lunastreaming:2.8.0_1.1.42',            // DataStax LunaStreaming 2.8
                    'harbor.sjc.dsinternal.org/pulsar/lunastreaming:latest-210' // LunaStreaming 2.10
             }
         }
