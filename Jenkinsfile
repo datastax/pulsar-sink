@@ -204,10 +204,11 @@ pipeline {
   }
 
   triggers {
-    parameterizedCron(branchPatternCron.matcher(env.BRANCH_NAME).matches() ? """
+    parameterizedCron(
+    """
       # Every weeknight (Monday - Friday) around 5:00 AM
-      H 5 * * 1-5 % MATRIX_TYPE=FULL; RUN_LONG_TESTS=true; SLACK_ENABLED=false; GENERATE_DISTRO=true
-    """ : "")
+      H 5 * * 1-5 % MATRIX_TYPE=FULL; RUN_LONG_TESTS=true; SLACK_ENABLED=false; GENERATE_DISTRO=false
+    """)
   }
 
   environment {
@@ -237,7 +238,7 @@ pipeline {
           }
           axis {
               name 'PULSAR_VERSION'
-              values 'apachepulsar/pulsar:2.8.2'
+              values 'apachepulsar/pulsar:2.8.3'
           }
         }
         agent {
@@ -308,10 +309,11 @@ pipeline {
           }
           axis {
             name 'PULSAR_VERSION'
-            values 'apachepulsar/pulsar:2.8.2',                         // Apache 2.8
-                   'apachepulsar/pulsar:2.9.1',                         // Apache 2.9
+            values 'apachepulsar/pulsar:2.8.3',                         // Apache 2.8
+                   'apachepulsar/pulsar:2.10.0',                         // Apache 2.10.0
                    'harbor.sjc.dsinternal.org/pulsar/pulsar:latest',    // Apache Master
-                   'datastax/lunastreaming:2.8.0_1.1.22'                 // DataStax LunaStreaming 2.8
+                   'datastax/lunastreaming:2.8.0_1.1.42'                 // DataStax LunaStreaming 2.8
+                   'harbor.sjc.dsinternal.org/pulsar/lunastreaming:latest-210' // LunaStreaming 2.10
             }
         }
         agent {
