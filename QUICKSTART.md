@@ -130,7 +130,6 @@ Check data on Cassandra:
 
     docker exec -it cassandra cqlsh -e "SELECT * FROM ks1.table1"
 
-C
 ## Shutdown containers
 
     docker-compose down
