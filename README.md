@@ -30,7 +30,6 @@ To do so please follow those steps:
 3. Run Pulsar Sink LocalRun and specify the path to the that config file:
 
        bin/pulsar-admin sinks localrun \
-          
           --sink-config-file /path/to/config/pulsar-sink.yaml \
           -t cassandra-enhanced \
           -i persistent://public/default/topic
