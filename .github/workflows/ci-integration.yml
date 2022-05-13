@@ -70,11 +70,13 @@ jobs:
 
       - name: Run integration tests (pulsar-impl)
         run: |
+          set -e
+          PREV_IFS=$IFS
           IFS=':'
           read -ra PULSAR_FULL_IMAGE <<< "${{ matrix.pulsar }}"
           IFS=$PREV_IFS
           PULSAR_IMAGE=${PULSAR_FULL_IMAGE[0]}
-          PULSAR_IMAGE_VERSION=${PULSAR_FUL_IMAGE[1]}
+          PULSAR_IMAGE_VERSION=${PULSAR_FULL_IMAGE[1]}
           
           mvn verify -Pmedium -pl pulsar-impl \
             -Ddsbulk.ccm.CCM_VERSION=${{ matrix.ccm.version }} \
@@ -85,11 +87,13 @@ jobs:
 
       - name: Run integration tests (tests)
         run: |
+          set -e
+          PREV_IFS=$IFS
           IFS=':'
           read -ra PULSAR_FULL_IMAGE <<< "${{ matrix.pulsar }}"
           IFS=$PREV_IFS
           PULSAR_IMAGE=${PULSAR_FULL_IMAGE[0]}
-          PULSAR_IMAGE_VERSION=${PULSAR_FUL_IMAGE[1]}
+          PULSAR_IMAGE_VERSION=${PULSAR_FULL_IMAGE[1]}
           
           mvn verify -Pmedium -pl tests \
             -Ddsbulk.ccm.CCM_VERSION=${{ matrix.ccm.version }} \
