@@ -33,11 +33,11 @@ jobs:
           cache: 'pip'
 
       - name: Setup CCM
-          run: |
-            #!/bin/bash
-            set -e
-            pip install pyYaml six psutil
-            pip install ccm
+        run: |
+          #!/bin/bash
+          set -e
+          pip install pyYaml six psutil
+          pip install ccm
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
