@@ -83,7 +83,8 @@ jobs:
             -Ddsbulk.ccm.CCM_IS_DSE=${{ matrix.ccm.dse }} \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
-            -Dmax.ccm.clusters=1 
+            -Dmax.ccm.clusters=1 \
+            -DredirectTestOutputToFile=false 
 
       - name: Run integration tests (tests)
         run: |
@@ -100,4 +101,4 @@ jobs:
             -Ddsbulk.ccm.CCM_IS_DSE=${{ matrix.ccm.dse }} \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
-            -Dmax.ccm.clusters=1 
+            -Dmax.ccm.clusters=1 -DredirectTestOutputToFile=false

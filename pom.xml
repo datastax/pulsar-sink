@@ -69,6 +69,7 @@
     <jackson-databind.version>2.12.6.1</jackson-databind.version>
     <logback.version>1.2.9</logback.version>
     <jnr.version>3.1.15</jnr.version>
+    <redirectTestOutputToFile>true</redirectTestOutputToFile>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -417,6 +418,7 @@ limitations under the License.]]></inlineHeader>
             <systemPropertyVariables>
               <logback.configurationFile>${project.basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
             </systemPropertyVariables>
+            <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           </configuration>
         </plugin>
         <plugin>
@@ -427,6 +429,7 @@ limitations under the License.]]></inlineHeader>
             <systemPropertyVariables>
               <logback.configurationFile>${project.basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
             </systemPropertyVariables>
+            <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           </configuration>
         </plugin>
         <plugin>
@@ -668,6 +671,7 @@ limitations under the License.]]></inlineHeader>
                   <groups>medium</groups>
                   <reportNameSuffix>medium</reportNameSuffix>
                   <forkCount>${max.ccm.clusters}</forkCount>
+                  <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                 </configuration>
               </execution>
             </executions>
