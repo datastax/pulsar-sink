@@ -25,7 +25,7 @@ jobs:
             dse: "false"
           - version: "3.11.12"
             dse: "false"
-          - version: "6.8"
+          - version: "6.8.23"
             dse: "true"
     steps:
       - uses: actions/checkout@v2
