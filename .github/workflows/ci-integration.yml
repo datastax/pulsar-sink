@@ -28,6 +28,11 @@ jobs:
         with:
           java-version: 11
           distribution: 'temurin'
+      - name: Set up JDK 8
+          uses: actions/setup-java@v2
+          with:
+            java-version: 8
+            distribution: 'temurin'
       - name: Pre set up Python
         run: |
           #!/bin/bash
@@ -38,6 +43,8 @@ jobs:
           psutil
           ccm
           """ > requirements.txt
+          java -version
+          which java
 
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -97,6 +104,7 @@ jobs:
           mvn verify -Pmedium -pl pulsar-impl \
             -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
             -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
+            -Ddsbulk.ccm.JAVA_HOME="java8path" \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
@@ -136,6 +144,7 @@ jobs:
           mvn verify -Pmedium -pl tests \
             -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
             -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
+            -Ddsbulk.ccm.JAVA_HOME="java8path" \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
