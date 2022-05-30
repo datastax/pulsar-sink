@@ -16,7 +16,7 @@ jobs:
       matrix:
         pulsar:
           - "datastax/lunastreaming:2.8.0_1.1.43"
-          - "datastax/lunastreaming:2.8.3_1.1.11"
+          - "datastax/lunastreaming:2.8.3_1.0.11"
           - "datastax/lunastreaming:2.10_0.4"
           - "apachepulsar/pulsar:2.8.3"
           - "apachepulsar/pulsar:2.10.0"
