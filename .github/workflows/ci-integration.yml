@@ -20,19 +20,13 @@ jobs:
           - "datastax/lunastreaming:2.10_0.2"
           - "apachepulsar/pulsar:2.8.3"
           - "apachepulsar/pulsar:2.10.0"
-        ccm:
-          - version: "4.0.3"
-            dse: "false"
-          - version: "3.11.12"
-            dse: "false"
-          - version: "6.8.23"
-            dse: "true"
+        cassandra: ["3", "4", "dse"]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
+      - name: Set up JDK 1.8
         uses: actions/setup-java@v2
         with:
-          java-version: 11
+          java-version: 1.8
           distribution: 'adopt'
       - name: Pre set up Python
         run: |
@@ -71,6 +65,7 @@ jobs:
       - name: Run integration tests (pulsar-impl)
         run: |
           set -e
+          echo "Running tests, pulsar: ${{ matrix.pulsar }}, cassandra: ${{ matrix.cassandra }}"  
           PREV_IFS=$IFS
           IFS=':'
           read -ra PULSAR_FULL_IMAGE <<< "${{ matrix.pulsar }}"
@@ -78,9 +73,30 @@ jobs:
           PULSAR_IMAGE=${PULSAR_FULL_IMAGE[0]}
           PULSAR_IMAGE_VERSION=${PULSAR_FULL_IMAGE[1]}
           
+          if [[ "${{ matrix.cassandra }}" == "3" ]]; then
+            export CASSANDRA_VERSION=3.11.13
+            export CCM_CASSANDRA_VERSION=3.11.13
+            export CCM_SERVER_TYPE=cassandra
+            export CCM_VERSION=3.11.13
+            export CCM_IS_DSE=false
+          elif [[ "${{ matrix.cassandra }}" == "4" ]]; then
+            export CASSANDRA_VERSION=4.0.4
+            export CCM_CASSANDRA_VERSION=4.0.4
+            export CCM_SERVER_TYPE=cassandra
+            export CCM_VERSION=4.0.4
+            export CCM_IS_DSE=false
+          elif [[ "${{ matrix.cassandra }}" == "dse" ]]; then
+            export CASSANDRA_VERSION=dse-6.8
+            export CCM_CASSANDRA_VERSION=6.8.23
+            export CCM_IS_DSE=true
+            export CCM_SERVER_TYPE=dse
+            export CCM_VERSION=6.8.23
+            export DSE_VERSION=6.8.23
+          fi
+
           mvn verify -Pmedium -pl pulsar-impl \
-            -Ddsbulk.ccm.CCM_VERSION=${{ matrix.ccm.version }} \
-            -Ddsbulk.ccm.CCM_IS_DSE=${{ matrix.ccm.dse }} \
+            -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
+            -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
