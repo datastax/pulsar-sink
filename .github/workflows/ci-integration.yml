@@ -147,7 +147,7 @@ jobs:
           mvn verify -Pmedium -pl tests \
             -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
             -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
-            -Ddsbulk.ccm.JAVA_HOME=$JDK8_PATH" \
+            -Ddsbulk.ccm.JAVA_HOME="$JDK8_PATH" \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
