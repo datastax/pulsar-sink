@@ -11,6 +11,7 @@ on:
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -101,15 +102,18 @@ jobs:
             export CCM_VERSION=6.8.23
             export DSE_VERSION=6.8.23
           fi
+          INSTALL_DIR=/tmp/install-dir
+          mkdir /tmp/install-dir
 
           mvn verify -Pmedium -pl pulsar-impl \
             -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
             -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
             -Ddsbulk.ccm.JAVA_HOME="$JDK8_PATH" \
+            -Ddsbulk.ccm.CCM_DIRECTORY=$INSTALL_DIR \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
-            -DredirectTestOutputToFile=false 
+            -DredirectTestOutputToFile=false || (echo "Build failed" && ls -la /tmp/install-dir && cat mkdir /tmp/install-dir/ccm3/node1/logs/debug.log && exit 1)
 
       - name: Run integration tests (tests)
         run: |
