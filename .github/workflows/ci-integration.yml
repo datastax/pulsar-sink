@@ -23,15 +23,19 @@ jobs:
         cassandra: ["3", "4", "dse"]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
-        with:
-          java-version: 11
-          distribution: 'temurin'
       - name: Set up JDK 8
         uses: actions/setup-java@v2
         with:
           java-version: 8
+          distribution: 'temurin'
+      - name: Save JDK8 path
+        run: |
+          export JDK8_PATH=$(which java)
+          echo "::set-env name=JDK8_PATH::$JDK8_PATH"
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
           distribution: 'temurin'
       - name: Pre set up Python
         run: |
@@ -104,7 +108,7 @@ jobs:
           mvn verify -Pmedium -pl pulsar-impl \
             -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
             -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
-            -Ddsbulk.ccm.JAVA_HOME="java8path" \
+            -Ddsbulk.ccm.JAVA_HOME="$JDK8_PATH" \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
@@ -141,10 +145,12 @@ jobs:
             export DSE_VERSION=6.8.23
           fi
           
+          env
+          
           mvn verify -Pmedium -pl tests \
             -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
             -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
-            -Ddsbulk.ccm.JAVA_HOME="java8path" \
+            -Ddsbulk.ccm.JAVA_HOME=$JDK8_PATH" \
             -Dpulsar.image=$PULSAR_IMAGE \
             -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
             -Dmax.ccm.clusters=1 \
