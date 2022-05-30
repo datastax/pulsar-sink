@@ -31,7 +31,7 @@ jobs:
       - name: Save JDK8 path
         run: |
           export JDK8_PATH=$(which java)
-          echo "::set-env name=JDK8_PATH::$JDK8_PATH"
+          echo "JDK8_PATH=$JDK8_PATH" >> $GITHUB_ENV
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
@@ -47,9 +47,6 @@ jobs:
           psutil
           ccm
           """ > requirements.txt
-          java -version
-          which java
-
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
