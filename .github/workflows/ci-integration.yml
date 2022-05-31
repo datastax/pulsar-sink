@@ -51,7 +51,6 @@ jobs:
         with:
           python-version: '2.x'
           cache: 'pip'
-
       - name: Setup CCM
         run: |
           #!/bin/bash
@@ -60,7 +59,7 @@ jobs:
           cd ccm-private
           
           pip install -r requirements.txt
-         ./setup.py install
+          ./setup.py install
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
