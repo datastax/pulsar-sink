@@ -45,7 +45,6 @@ jobs:
           pyYaml 
           six 
           psutil
-          ccm
           """ > requirements.txt
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -57,7 +56,11 @@ jobs:
         run: |
           #!/bin/bash
           set -e
+          git clone https://github.com/riptano/ccm-private.git
+          cd ccm-private
+          
           pip install -r requirements.txt
+         ./setup.py install
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
