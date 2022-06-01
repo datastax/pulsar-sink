@@ -14,31 +14,61 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java:
-          - '11'
-          - '17'
-
+        pulsar:
+          - "datastax/lunastreaming:2.8.0_1.1.43"
+          - "datastax/lunastreaming:2.8.3_1.0.11"
+          - "datastax/lunastreaming:2.10_0.4"
+          - "apachepulsar/pulsar:2.8.3"
+          - "apachepulsar/pulsar:2.10.0"
+        cassandra: ["3", "4", "dse"]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK ${{ matrix.java }}
+      - name: Set up JDK 8
         uses: actions/setup-java@v2
         with:
-          java-version: ${{ matrix.java }}
-          distribution: 'adopt'
-
+          java-version: 8
+          distribution: 'temurin'
+      - name: Save JDK8 path
+        run: |
+          export JDK8_PATH=$JAVA_HOME
+          echo "JDK8_PATH=$JDK8_PATH" >> $GITHUB_ENV
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: 'temurin'
+      - name: Pre set up Python
+        run: |
+          #!/bin/bash
+          # This step is need to not make setup-python fails
+          set -e
+          echo """
+          pyYaml 
+          six 
+          psutil
+          """ > requirements.txt
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: '2.x'
           cache: 'pip'
-
+      - name: Setup CCM private
+        if: ${{ matrix.cassandra == 'dse' }}
+        env:
+          CLONE_RIPTANO_CCM_SECRET: ${{secrets.CLONE_RIPTANO_CCM_SECRET}}
+        run: |
+          #!/bin/bash
+          set -e
+          git clone https://${CLONE_RIPTANO_CCM_SECRET}@github.com/riptano/ccm-private.git
+          cd ccm-private
+          
+          pip install -r requirements.txt
+          ./setup.py install
       - name: Setup CCM
-          run: |
-            #!/bin/bash
-            set -e
-            pip install pyYaml six psutil
-            pip install ccm
-
+        if: ${{ matrix.cassandra != 'dse' }}
+        run: |
+          #!/bin/bash
+          pip install ccm
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
@@ -47,11 +77,88 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build with JDK ${{ matrix.java }}
+      - name: Build with JDK 11
         run: mvn -B clean install -DskipTests
 
-      - name: Run integration tests
+      - name: Run integration tests (pulsar-impl)
         run: |
-          #!/bin/bash
           set -e
-          mvn verify -Pmedium -Ddsbulk.ccm.CCM_VERSION=4.0.3 -Ddsbulk.ccm.CCM_IS_DSE=false -Dmax.ccm.clusters=1 -pl pulsar-impl
+          echo "Running tests, pulsar: ${{ matrix.pulsar }}, cassandra: ${{ matrix.cassandra }}"  
+          PREV_IFS=$IFS
+          IFS=':'
+          read -ra PULSAR_FULL_IMAGE <<< "${{ matrix.pulsar }}"
+          IFS=$PREV_IFS
+          PULSAR_IMAGE=${PULSAR_FULL_IMAGE[0]}
+          PULSAR_IMAGE_VERSION=${PULSAR_FULL_IMAGE[1]}
+          
+          if [[ "${{ matrix.cassandra }}" == "3" ]]; then
+            export CASSANDRA_VERSION=3.11.13
+            export CCM_CASSANDRA_VERSION=3.11.13
+            export CCM_SERVER_TYPE=cassandra
+            export CCM_VERSION=3.11.13
+            export CCM_IS_DSE=false
+          elif [[ "${{ matrix.cassandra }}" == "4" ]]; then
+            export CASSANDRA_VERSION=4.0.4
+            export CCM_CASSANDRA_VERSION=4.0.4
+            export CCM_SERVER_TYPE=cassandra
+            export CCM_VERSION=4.0.4
+            export CCM_IS_DSE=false
+          elif [[ "${{ matrix.cassandra }}" == "dse" ]]; then
+            export CASSANDRA_VERSION=dse-6.8
+            export CCM_CASSANDRA_VERSION=6.8.23
+            export CCM_IS_DSE=true
+            export CCM_SERVER_TYPE=dse
+            export CCM_VERSION=6.8.23
+            export DSE_VERSION=6.8.23
+          fi
+
+          mvn verify -Pmedium -pl pulsar-impl \
+            -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
+            -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
+            -Ddsbulk.ccm.JAVA_HOME="$JDK8_PATH" \
+            -Dpulsar.image=$PULSAR_IMAGE \
+            -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
+            -Dmax.ccm.clusters=1 \
+            -DredirectTestOutputToFile=false || (echo "Build failed" && find "/tmp/" -name "debug.log" -exec cat {} + && find "/tmp/" -name "system.log" -exec cat {} + && exit 1)
+
+      - name: Run integration tests (tests)
+        run: |
+          echo "Running tests, pulsar: ${{ matrix.pulsar }}, cassandra: ${{ matrix.cassandra }}"  
+          PREV_IFS=$IFS
+          IFS=':'
+          read -ra PULSAR_FULL_IMAGE <<< "${{ matrix.pulsar }}"
+          IFS=$PREV_IFS
+          PULSAR_IMAGE=${PULSAR_FULL_IMAGE[0]}
+          PULSAR_IMAGE_VERSION=${PULSAR_FULL_IMAGE[1]}
+          
+          if [[ "${{ matrix.cassandra }}" == "3" ]]; then
+            export CASSANDRA_VERSION=3.11.13
+            export CCM_CASSANDRA_VERSION=3.11.13
+            export CCM_SERVER_TYPE=cassandra
+            export CCM_VERSION=3.11.13
+            export CCM_IS_DSE=false
+          elif [[ "${{ matrix.cassandra }}" == "4" ]]; then
+            export CASSANDRA_VERSION=4.0.4
+            export CCM_CASSANDRA_VERSION=4.0.4
+            export CCM_SERVER_TYPE=cassandra
+            export CCM_VERSION=4.0.4
+            export CCM_IS_DSE=false
+          elif [[ "${{ matrix.cassandra }}" == "dse" ]]; then
+            export CASSANDRA_VERSION=dse-6.8
+            export CCM_CASSANDRA_VERSION=6.8.23
+            export CCM_IS_DSE=true
+            export CCM_SERVER_TYPE=dse
+            export CCM_VERSION=6.8.23
+            export DSE_VERSION=6.8.23
+          fi
+          
+          env
+          
+          mvn verify -Pmedium -pl tests \
+            -Ddsbulk.ccm.CCM_VERSION=$CCM_VERSION \
+            -Ddsbulk.ccm.CCM_IS_DSE=$CCM_IS_DSE \
+            -Ddsbulk.ccm.JAVA_HOME="$JDK8_PATH" \
+            -Dpulsar.image=$PULSAR_IMAGE \
+            -Dpulsar.image.version=$PULSAR_IMAGE_VERSION \
+            -Dmax.ccm.clusters=1 \
+            -DredirectTestOutputToFile=false
