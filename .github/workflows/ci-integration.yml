@@ -52,10 +52,12 @@ jobs:
           python-version: '2.x'
           cache: 'pip'
       - name: Setup CCM
+        env:
+          CLONE_RIPTANO_CCM_SECRET: ${{secrets.CLONE_RIPTANO_CCM_SECRET}}
         run: |
           #!/bin/bash
           set -e
-          git clone https://github.com/riptano/ccm-private.git
+          git clone https://${CLONE_RIPTANO_CCM_SECRET}@github.com/riptano/ccm-private.git
           cd ccm-private
           
           pip install -r requirements.txt
