@@ -53,7 +53,7 @@ jobs:
           python-version: '2.x'
           cache: 'pip'
       - name: Setup CCM private
-        if: ${{ matrix.cassandra == "dse" }}
+        if: ${{ matrix.cassandra == 'dse' }}
         env:
           CLONE_RIPTANO_CCM_SECRET: ${{secrets.CLONE_RIPTANO_CCM_SECRET}}
         run: |
@@ -65,7 +65,7 @@ jobs:
           pip install -r requirements.txt
           ./setup.py install
       - name: Setup CCM
-        if: ${{ matrix.cassandra =! "dse" }}
+        if: ${{ matrix.cassandra =! 'dse' }}
         run: |
           #!/bin/bash
           pip install ccm
