@@ -65,7 +65,7 @@ jobs:
           pip install -r requirements.txt
           ./setup.py install
       - name: Setup CCM
-        if: ${{ matrix.cassandra =! 'dse' }}
+        if: ${{ matrix.cassandra != 'dse' }}
         run: |
           #!/bin/bash
           pip install ccm
