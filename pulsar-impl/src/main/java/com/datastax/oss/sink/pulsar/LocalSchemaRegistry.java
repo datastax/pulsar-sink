@@ -57,9 +57,10 @@ public class LocalSchemaRegistry {
       if (res == null) {
         res = PulsarSchema.createFromStruct(path, struct, this);
         registry.put(path, res);
+      } else {
+        // need to recover nulls from previous records
+        res.update(path, struct, this);
       }
-      // need to recover nulls from previous records
-      res.update(path, struct, this);
       return res;
     } else {
       // primitive values
