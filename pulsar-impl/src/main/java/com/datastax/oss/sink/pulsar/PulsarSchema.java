@@ -169,7 +169,14 @@ public class PulsarSchema implements AbstractSchema {
 
   @Override
   public String toString() {
-    return "PulsarSchema{" + "fields=" + fields + ", type=" + type + '}';
+    return "PulsarSchema{"
+        + "fields="
+        + fields
+        + ", type="
+        + type
+        + ", valueWasNull="
+        + valueWasNull
+        + '}';
   }
 
   public boolean isValueWasNull() {
