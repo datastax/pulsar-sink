@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.pulsar.client.api.schema.Field;
 import org.apache.pulsar.client.api.schema.GenericRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Datatype. */
 public class PulsarSchema implements AbstractSchema {
@@ -37,12 +39,13 @@ public class PulsarSchema implements AbstractSchema {
   public static final PulsarSchema BOOLEAN = new PulsarSchema(AbstractSchema.Type.BOOLEAN);
   public static final PulsarSchema STRING = new PulsarSchema(AbstractSchema.Type.STRING);
   public static final PulsarSchema BYTES = new PulsarSchema(AbstractSchema.Type.BYTES);
+  public static final PulsarSchema FIRST_VALUE_NULL = new PulsarSchema(Type.STRING, false);
 
   public static PulsarSchema of(String path, Object value, LocalSchemaRegistry registry) {
     if (value == null) {
       // there is no support for NULLS in Cassandra Driver type system
       // using STRING
-      return STRING;
+      return FIRST_VALUE_NULL;
     }
     if (value instanceof Integer) {
       return INT32;
@@ -88,17 +91,26 @@ public class PulsarSchema implements AbstractSchema {
 
   private final Map<String, PulsarField> fields;
   private final AbstractSchema.Type type;
+  private final boolean valueWasNull;
 
   private PulsarSchema(String path, GenericRecord template, LocalSchemaRegistry registry) {
     this.fields = new ConcurrentHashMap<>();
     this.type = AbstractSchema.Type.STRUCT;
+    this.valueWasNull = true;
     update(path, template, registry);
   }
 
   private PulsarSchema(AbstractSchema.Type type) {
+    this(type, true);
+  }
+
+  private PulsarSchema(AbstractSchema.Type type, boolean valueWasNull) {
     this.type = type;
     this.fields = Collections.emptyMap();
+    this.valueWasNull = valueWasNull;
   }
+
+  private static final Logger log = LoggerFactory.getLogger(PulsarSchema.class);
 
   /**
    * Unfortunately Pulsar does not return information about the datatype of Fields, so we have to
@@ -117,6 +129,13 @@ public class PulsarSchema implements AbstractSchema {
       // it is not expected that a field changes data type
       // once we find a non-null value
       PulsarSchema schemaForField = PulsarSchema.of(path + "." + f.getName(), value, registry);
+
+      if (fields.containsKey(f.getName()) && !schemaForField.isValueWasNull()) {
+        if (log.isDebugEnabled()) {
+          log.debug("skipping updating field {} schema because it was a NULL value");
+        }
+        continue;
+      }
       PulsarField field = new PulsarField(f.getName(), schemaForField);
       this.fields.put(f.getName(), field);
     }
@@ -150,6 +169,17 @@ public class PulsarSchema implements AbstractSchema {
 
   @Override
   public String toString() {
-    return "PulsarSchema{" + "fields=" + fields + ", type=" + type + '}';
+    return "PulsarSchema{"
+        + "fields="
+        + fields
+        + ", type="
+        + type
+        + ", valueWasNull="
+        + valueWasNull
+        + '}';
+  }
+
+  public boolean isValueWasNull() {
+    return valueWasNull;
   }
 }
