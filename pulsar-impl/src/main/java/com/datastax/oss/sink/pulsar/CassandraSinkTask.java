@@ -87,8 +87,8 @@ public class CassandraSinkTask<T> implements Sink<T> {
             } else {
               log.warn("Error decoding/mapping Pulsar record {}: {}", impl, e.getMessage());
             }
-            if (log.isDebugEnabled()) {
-              log.debug("Details of the error", e);
+            if (verbose) {
+              log.warn("Details of the error", e);
             }
             if (!ignore) {
               if (verbose) {
