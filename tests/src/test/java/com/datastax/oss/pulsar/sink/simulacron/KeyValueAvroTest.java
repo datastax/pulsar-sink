@@ -41,6 +41,12 @@ public class KeyValueAvroTest extends PulsarCCMTestBase {
   }
 
   @Override
+  protected void preparePulsarSinkTester(PulsarSinkTester pulsarSink) {
+    super.preparePulsarSinkTester(pulsarSink);
+    connectorProperties.put("batchSize", "2");
+  }
+
+  @Override
   protected void performTest(final PulsarSinkTester pulsarSink) throws PulsarClientException {
     Long long1 = Instant.now().toEpochMilli();
     Long long2 = Instant.now().toEpochMilli() + 1000L;
@@ -60,6 +66,10 @@ public class KeyValueAvroTest extends PulsarCCMTestBase {
       producer
           .newMessage()
           .value(new KeyValue<>(new MyKey(838), new MyBean("value1", long1)))
+          .send();
+      producer
+          .newMessage()
+          .value(new KeyValue<>(new MyKey(838), new MyBean("value1", null)))
           .send();
       producer
           .newMessage()

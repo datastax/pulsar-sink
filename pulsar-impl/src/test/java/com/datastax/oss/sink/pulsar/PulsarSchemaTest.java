@@ -45,7 +45,7 @@ public class PulsarSchemaTest {
 
     assertSame(PulsarSchema.BYTES, PulsarSchema.of("the-path", new byte[0], registry));
 
-    assertSame(PulsarSchema.STRING, PulsarSchema.of("the-path", null, registry));
+    assertSame(PulsarSchema.FIRST_VALUE_NULL, PulsarSchema.of("the-path", null, registry));
   }
 
   @Test
@@ -61,7 +61,7 @@ public class PulsarSchemaTest {
     assertEquals(2, schema.fields().size());
     assertSame(PulsarSchema.INT32, schema.field("test").schema());
     // let's assume it is a STRING
-    assertSame(PulsarSchema.STRING, schema.field("nullvalue").schema());
+    assertSame(PulsarSchema.FIRST_VALUE_NULL, schema.field("nullvalue").schema());
 
     // then we get to know that it is a "double"
     GenericRecordImpl genericRecordNotNull =
