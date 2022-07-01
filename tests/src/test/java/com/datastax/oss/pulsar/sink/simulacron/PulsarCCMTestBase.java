@@ -61,7 +61,9 @@ abstract class PulsarCCMTestBase {
 
     session.execute(
         SimpleStatement.builder(
-                "CREATE TABLE IF NOT EXISTS table1 (" + "a int PRIMARY KEY, " + "b varchar)")
+                "CREATE TABLE IF NOT EXISTS table1 ("
+                    + "a int PRIMARY KEY, "
+                    + "b varchar, c TIMESTAMP)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -116,9 +118,15 @@ abstract class PulsarCCMTestBase {
   public static final class MyBean {
 
     private String field1;
+    private Long longField;
 
     public MyBean(String field1) {
       this.field1 = field1;
+    }
+
+    public MyBean(String field1, Long longField) {
+      this.field1 = field1;
+      this.longField = longField;
     }
 
     public String getField1() {
@@ -127,6 +135,14 @@ abstract class PulsarCCMTestBase {
 
     public void setField1(String field1) {
       this.field1 = field1;
+    }
+
+    public Long getLongField() {
+      return longField;
+    }
+
+    public void setLongField(Long longField) {
+      this.longField = longField;
     }
   }
 }
