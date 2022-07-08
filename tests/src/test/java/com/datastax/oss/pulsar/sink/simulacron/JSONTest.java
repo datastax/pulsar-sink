@@ -20,7 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
@@ -29,6 +32,9 @@ import org.awaitility.Awaitility;
 
 /** Use JSON - schema is set on the topic */
 public class JSONTest extends PulsarCCMTestBase {
+
+  private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
+  private final List<String> list = ImmutableList.of("l1", "l2");
 
   public JSONTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
@@ -43,7 +49,8 @@ public class JSONTest extends PulsarCCMTestBase {
             .newProducer(Schema.JSON(MyBean.class))
             .topic(pulsarSink.getTopic())
             .create()) {
-      producer.newMessage().key("838").value(new MyBean("value1")).send();
+
+      producer.newMessage().key("838").value(new MyBean("value1", map, list)).send();
     }
     try {
       Awaitility.waitAtMost(1, TimeUnit.MINUTES)
@@ -59,6 +66,8 @@ public class JSONTest extends PulsarCCMTestBase {
         log.info("ROW: " + row);
         assertEquals(838, row.getInt("a"));
         assertEquals("value1", row.getString("b"));
+        assertEquals(map, row.getMap("d", String.class, String.class));
+        assertEquals(list, row.getList("e", String.class));
       }
       assertEquals(1, results.size());
     } finally {

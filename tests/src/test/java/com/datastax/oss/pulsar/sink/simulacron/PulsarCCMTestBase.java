@@ -21,6 +21,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import com.datastax.oss.dsbulk.tests.ccm.CCMExtension;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +44,8 @@ abstract class PulsarCCMTestBase {
   protected final CqlSession session;
   private final String keyspaceName;
 
-  private static final String DEFAULT_MAPPING = "a=key, b=value.field1";
+  private static final String DEFAULT_MAPPING =
+      "a=key, b=value.field1, d=value.mapField, e=value.listField";
 
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
@@ -63,7 +65,10 @@ abstract class PulsarCCMTestBase {
         SimpleStatement.builder(
                 "CREATE TABLE IF NOT EXISTS table1 ("
                     + "a int PRIMARY KEY, "
-                    + "b varchar, c TIMESTAMP)")
+                    + "b varchar, "
+                    + "c TIMESTAMP, "
+                    + "d map<text,text>, "
+                    + "e list<text>)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -119,6 +124,8 @@ abstract class PulsarCCMTestBase {
 
     private String field1;
     private Long longField;
+    private Map<String, String> mapField;
+    private List<String> listField;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -129,12 +136,34 @@ abstract class PulsarCCMTestBase {
       this.longField = longField;
     }
 
+    public MyBean(String field1, Map<String, String> field2, List<String> field3) {
+      this(field1, Instant.now().toEpochMilli());
+      this.mapField = field2;
+      this.listField = field3;
+    }
+
     public String getField1() {
       return field1;
     }
 
     public void setField1(String field1) {
       this.field1 = field1;
+    }
+
+    public Map<String, String> getMapField() {
+      return mapField;
+    }
+
+    public void setMapField(Map<String, String> mapField) {
+      this.mapField = mapField;
+    }
+
+    public List<String> getListField() {
+      return listField;
+    }
+
+    public void setListField(List<String> listField) {
+      this.listField = listField;
     }
 
     public Long getLongField() {
