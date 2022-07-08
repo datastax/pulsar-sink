@@ -23,6 +23,9 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.awaitility.Awaitility;
@@ -49,7 +52,7 @@ public class JSONFromByteArrayTest extends PulsarCCMTestBase {
             .newProducer() // no schema
             .topic(pulsarSink.getTopic())
             .create()) {
-      producer.newMessage().key("838").value("{\"field1\":\"value1\"}".getBytes(UTF_8)).send();
+      producer.newMessage().key("838").value("{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"]}".getBytes(UTF_8)).send();
     }
     try {
       Awaitility.waitAtMost(1, TimeUnit.MINUTES)
@@ -65,6 +68,8 @@ public class JSONFromByteArrayTest extends PulsarCCMTestBase {
         log.info("ROW: " + row);
         assertEquals(838, row.getInt("a"));
         assertEquals("value1", row.getString("b"));
+        assertEquals(ImmutableMap.of("k1", "v1", "k2", "v2"), row.getMap("d", String.class, String.class));
+        assertEquals(ImmutableList.of("l1", "l2"), row.getList("e", String.class));
       }
       assertEquals(1, results.size());
     } finally {
