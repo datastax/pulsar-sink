@@ -52,15 +52,15 @@ public class StructToJsonNodeCodecAdapter<T> extends ConvertingCodec<PulsarStruc
           (JsonNode) external.getRecord().getNativeObject());
     }
 
-    return null;
+    Object nativeObject = external.getRecord().getNativeObject();
+    throw new IllegalArgumentException(
+        "Expecting JsonNode, got "
+            + (nativeObject == null ? "NULL" : nativeObject.getClass().getName()));
   }
 
   @Override
-  public PulsarStruct internalToExternal(T dt) {
-    if (dt == null) {
-      return null;
-    }
+  public PulsarStruct internalToExternal(T internal) {
     throw new UnsupportedOperationException(
-        "This codec does not support converting from JsonNode to cql types");
+        "This codec does not support converting to PulsarStruct");
   }
 }
