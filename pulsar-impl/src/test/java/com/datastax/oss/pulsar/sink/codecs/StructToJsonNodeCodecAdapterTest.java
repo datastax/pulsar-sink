@@ -54,7 +54,7 @@ class StructToJsonNodeCodecAdapterTest {
               .<PulsarStruct, Map<String, String>>createConvertingCodec(
                   mapType, GenericType.of(PulsarStruct.class), true);
 
-  private final StructToJsonNodeCodecAdapter structArrayCodec =
+  private final StructToJsonNodeCodecAdapter structListCodec =
       (StructToJsonNodeCodecAdapter)
           new ConvertingCodecFactory(new TextConversionContext())
               .<PulsarStruct, List<String>>createConvertingCodec(
@@ -82,12 +82,12 @@ class StructToJsonNodeCodecAdapterTest {
   }
 
   @Test
-  void should_convert_array_from_valid_external() {
+  void should_convert_list_from_valid_external() {
     JsonNode nativeObject = mapper.valueToTree(listValue);
     struct = new GenericRecordImpl(nativeObject);
     record = new PulsarRecordImpl(null, null, struct, schema);
 
-    assertThat(structArrayCodec)
+    assertThat(structListCodec)
         .convertsFromExternal(PulsarStruct.ofRecord(record, registry))
         .toInternal(listValue)
         .convertsFromExternal(null)
@@ -102,7 +102,61 @@ class StructToJsonNodeCodecAdapterTest {
 
   @Test
   void should_not_convert_list_from_invalid_external() throws Exception {
-    assertThat(structArrayCodec)
+    assertThat(structListCodec)
         .cannotConvertFromExternal(mapper.readTree("[\"not a pulsar struct!\"]"));
+  }
+
+  @Test
+  void should_not_convert_list_from_null_internal() {
+    assertThat(structListCodec).cannotConvertFromInternal(null);
+  }
+
+  @Test
+  void should_not_convert_map_from_null_internal() {
+    assertThat(structMapCodec).cannotConvertFromInternal(null);
+  }
+
+  @Test
+  void should_not_convert_list_from_internal() {
+    assertThat(structMapCodec).cannotConvertFromInternal(listValue);
+  }
+
+  @Test
+  void should_not_convert_map_from_internal() {
+    assertThat(structMapCodec).cannotConvertFromInternal(mapValue);
+  }
+
+  @Test
+  void should_not_convert_list_from_null_native_external() {
+    struct = new GenericRecordImpl(null);
+    record = new PulsarRecordImpl(null, null, struct, schema);
+
+    assertThat(structListCodec).cannotConvertFromExternal(PulsarStruct.ofRecord(record, registry));
+  }
+
+  @Test
+  void should_not_convert_map_from_null_native_external() {
+    struct = new GenericRecordImpl(null);
+    record = new PulsarRecordImpl(null, null, struct, schema);
+
+    assertThat(structMapCodec).cannotConvertFromExternal(PulsarStruct.ofRecord(record, registry));
+  }
+
+  @Test
+  void should_not_convert_list_from_invalid_native_external() {
+    Long nativeObject = 0L;
+    struct = new GenericRecordImpl(nativeObject);
+    record = new PulsarRecordImpl(null, null, struct, schema);
+
+    assertThat(structListCodec).cannotConvertFromExternal(PulsarStruct.ofRecord(record, registry));
+  }
+
+  @Test
+  void should_not_convert_map_from_invalid_native_external() {
+    Long nativeObject = 0L;
+    struct = new GenericRecordImpl(nativeObject);
+    record = new PulsarRecordImpl(null, null, struct, schema);
+
+    assertThat(structMapCodec).cannotConvertFromExternal(PulsarStruct.ofRecord(record, registry));
   }
 }
