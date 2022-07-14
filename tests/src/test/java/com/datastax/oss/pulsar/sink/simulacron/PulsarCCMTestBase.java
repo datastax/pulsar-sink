@@ -74,7 +74,7 @@ abstract class PulsarCCMTestBase {
                     + "c TIMESTAMP, "
                     + "d map<text,text>, "
                     + "e list<text>, "
-                    + "f udt)")
+                    + "f FROZEN<udt>)") // Non-frozen User-Defined types are not supported in Cassandra 3.0
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
