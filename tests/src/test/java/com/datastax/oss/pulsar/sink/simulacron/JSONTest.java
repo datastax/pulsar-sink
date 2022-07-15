@@ -37,7 +37,7 @@ public class JSONTest extends PulsarCCMTestBase {
   private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
   private final List<String> list = ImmutableList.of("l1", "l2");
 
-  private final Map<String, Object> udt = ImmutableMap.of("f1", 99, "f2", "random");
+  private final MyUdt udt = new MyUdt(99, "random");
 
   public JSONTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
@@ -73,8 +73,8 @@ public class JSONTest extends PulsarCCMTestBase {
         assertEquals(list, row.getList("e", String.class));
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
         assertEquals(value.size(), 2);
-        assertEquals(udt.get("f1"), value.getInt("f1"));
-        assertEquals(udt.get("f2"), value.getString("f2"));
+        assertEquals(udt.getIntf(), value.getInt("intf"));
+        assertEquals(udt.getStringf(), value.getString("stringf"));
       }
       assertEquals(1, results.size());
     } finally {

@@ -19,8 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.internal.core.data.DefaultUdtValue;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
@@ -29,6 +33,9 @@ import org.awaitility.Awaitility;
 
 /** Use AVRO */
 public class AvroTest extends PulsarCCMTestBase {
+  private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
+  private final List<String> list = ImmutableList.of("l1", "l2");
+  private final MyUdt udt = new MyUdt(99, "random");
 
   public AvroTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
@@ -43,7 +50,7 @@ public class AvroTest extends PulsarCCMTestBase {
             .newProducer(Schema.AVRO(MyBean.class))
             .topic(pulsarSink.getTopic())
             .create()) {
-      producer.newMessage().key("838").value(new MyBean("value1")).send();
+      producer.newMessage().key("838").value(new MyBean("value1", map, list, udt)).send();
     }
     try {
       Awaitility.waitAtMost(2, TimeUnit.MINUTES)
@@ -59,6 +66,12 @@ public class AvroTest extends PulsarCCMTestBase {
         log.info("ROW: " + row);
         assertEquals(838, row.getInt("a"));
         assertEquals("value1", row.getString("b"));
+        assertEquals(map, row.getMap("d", String.class, String.class));
+        assertEquals(list, row.getList("e", String.class));
+        DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
+        assertEquals(value.size(), 2);
+        assertEquals(udt.getIntf(), value.getInt("stringf"));
+        assertEquals(udt.getStringf(), value.getString("intf"));
       }
       assertEquals(1, results.size());
     } finally {

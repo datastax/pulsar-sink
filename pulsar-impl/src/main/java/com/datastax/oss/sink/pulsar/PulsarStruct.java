@@ -18,7 +18,10 @@ package com.datastax.oss.sink.pulsar;
 import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractStruct;
 import com.datastax.oss.common.sink.util.SinkUtil;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.apache.avro.util.internal.JacksonUtils;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
@@ -36,12 +39,26 @@ public class PulsarStruct implements AbstractStruct {
       PulsarStruct parent, String fieldName, Object o, LocalSchemaRegistry schemaRegistry) {
 
     if (o instanceof GenericRecord) {
+      GenericRecord genericRecord = (GenericRecord) o;
       String schemaPath = parent.getPath() + "/" + fieldName;
 
       return new PulsarStruct(
-          (GenericRecord) o,
+          genericRecord,
           parent.eventTime,
-          schemaRegistry.ensureAndUpdateSchema(schemaPath, (GenericRecord) o),
+          schemaRegistry.ensureAndUpdateSchema(schemaPath, genericRecord),
+          schemaPath,
+          schemaRegistry);
+    } else if (parent.record.getNativeObject() instanceof org.apache.avro.generic.GenericRecord
+        && (o instanceof List || o instanceof Map)) {
+      // Convert Avro List/Map to JsonNode wrapped in a Struct. // This will allow reusing the
+      // StructToJsonNodeCodecAdapter out of the box
+      GenericRecordWrapper wrapper = new GenericRecordWrapper(JacksonUtils.toJsonNode(o));
+      String schemaPath = parent.getPath() + "/" + fieldName;
+
+      return new PulsarStruct(
+          wrapper,
+          parent.eventTime,
+          schemaRegistry.ensureAndUpdateSchema(schemaPath, wrapper),
           schemaPath,
           schemaRegistry);
     }

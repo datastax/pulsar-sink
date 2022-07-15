@@ -62,7 +62,7 @@ abstract class PulsarCCMTestBase {
     keyspaceName = session.getKeyspace().orElse(CqlIdentifier.fromInternal("unknown")).asInternal();
 
     session.execute(
-        SimpleStatement.builder("CREATE TYPE udt (" + "f1 int," + "f2 text)")
+        SimpleStatement.builder("CREATE TYPE udt (" + "intf int," + "stringf text)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -126,13 +126,39 @@ abstract class PulsarCCMTestBase {
     }
   }
 
+  public static final class MyUdt {
+    public int intf;
+    private String stringf;
+
+    public MyUdt(int intf, String stringf) {
+      this.intf = intf;
+      this.stringf = stringf;
+    }
+
+    public int getIntf() {
+      return intf;
+    }
+
+    public void setIntf(int intf) {
+      this.intf = intf;
+    }
+
+    public String getStringf() {
+      return stringf;
+    }
+
+    public void setStringf(String stringf) {
+      this.stringf = stringf;
+    }
+  }
+
   public static final class MyBean {
 
     private String field1;
     private Long longField;
     private Map<String, String> mapField;
     private List<String> listField;
-    private Map<String, Object> udtField;
+    private MyUdt udtField;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -144,10 +170,7 @@ abstract class PulsarCCMTestBase {
     }
 
     public MyBean(
-        String stringField,
-        Map<String, String> mapField,
-        List<String> listField,
-        Map<String, Object> udtField) {
+        String stringField, Map<String, String> mapField, List<String> listField, MyUdt udtField) {
       this(stringField, Instant.now().toEpochMilli());
       this.mapField = mapField;
       this.listField = listField;
@@ -186,11 +209,11 @@ abstract class PulsarCCMTestBase {
       this.longField = longField;
     }
 
-    public Map<String, Object> getUdtField() {
+    public MyUdt getUdtField() {
       return udtField;
     }
 
-    public void setUdtField(Map<String, Object> udtField) {
+    public void setUdtField(MyUdt udtField) {
       this.udtField = udtField;
     }
   }
