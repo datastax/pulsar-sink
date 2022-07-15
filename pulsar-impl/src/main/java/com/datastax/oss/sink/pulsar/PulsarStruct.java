@@ -44,7 +44,7 @@ public class PulsarStruct implements AbstractStruct {
       return new PulsarStruct(
           (GenericRecord) o,
           parent.eventTime,
-          schemaRegistry.ensureAndUpdateSchema(schemaPath, genericRecord),
+          schemaRegistry.ensureAndUpdateSchema(schemaPath, o),
           schemaPath,
           schemaRegistry);
     } else if (parent.record.getNativeObject() instanceof org.apache.avro.generic.GenericRecord
