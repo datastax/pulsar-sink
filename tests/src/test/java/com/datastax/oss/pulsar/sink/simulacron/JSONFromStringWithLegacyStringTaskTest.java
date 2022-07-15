@@ -77,8 +77,8 @@ public class JSONFromStringWithLegacyStringTaskTest extends PulsarCCMTestBase {
         assertEquals(ImmutableList.of("l1", "l2"), row.getList("e", String.class));
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
         assertEquals(value.size(), 2);
-        assertEquals(99, value.getInt("f1"));
-        assertEquals("random", value.getString("f2"));
+        assertEquals(99, value.getInt("intf"));
+        assertEquals("random", value.getString("stringf"));
       }
       assertEquals(1, results.size());
     } finally {
