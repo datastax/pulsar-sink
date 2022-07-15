@@ -70,7 +70,12 @@ abstract class PulsarCCMTestBase {
         SimpleStatement.builder(
                 "CREATE TABLE IF NOT EXISTS table1 ("
                     + "a int PRIMARY KEY, "
-                    + "b varchar, c TIMESTAMP)")
+                    + "b varchar, "
+                    + "c TIMESTAMP, "
+                    + "d map<text,text>, "
+                    + "e list<text>, "
+                    + "f FROZEN<udt>)") // Non-frozen User-Defined types are not supported in
+                                        // Cassandra 3.0
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -179,6 +184,22 @@ abstract class PulsarCCMTestBase {
 
     public void setField1(String field1) {
       this.field1 = field1;
+    }
+
+    public Map<String, String> getMapField() {
+      return mapField;
+    }
+
+    public void setMapField(Map<String, String> mapField) {
+      this.mapField = mapField;
+    }
+
+    public List<String> getListField() {
+      return listField;
+    }
+
+    public void setListField(List<String> listField) {
+      this.listField = listField;
     }
 
     public Long getLongField() {
