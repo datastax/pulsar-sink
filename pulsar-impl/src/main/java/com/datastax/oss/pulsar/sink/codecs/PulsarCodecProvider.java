@@ -41,6 +41,13 @@ public class PulsarCodecProvider implements ConvertingCodecProvider {
             || externalJavaType.equals(GenericType.of(AbstractStruct.class)))) {
       return Optional.of(new StructToUDTCodec(codecFactory, (UserDefinedType) cqlType));
     }
+
+    // TODO: Add complex cql types support for Avro:
+    // https://github.com/datastax/pulsar-sink/issues/33
+    if (externalJavaType.equals(GenericType.of(PulsarStruct.class))
+        || externalJavaType.equals(GenericType.of(AbstractStruct.class))) {
+      return Optional.of(new StructToJsonNodeCodecAdapter(codecFactory, cqlType));
+    }
     return Optional.empty();
   }
 }
