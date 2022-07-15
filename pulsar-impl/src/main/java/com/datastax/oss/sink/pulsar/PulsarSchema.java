@@ -17,12 +17,16 @@ package com.datastax.oss.sink.pulsar;
 
 import com.datastax.oss.common.sink.AbstractField;
 import com.datastax.oss.common.sink.AbstractSchema;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.pulsar.client.api.schema.Field;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Datatype. */
 public class PulsarSchema implements AbstractSchema {
@@ -76,9 +80,6 @@ public class PulsarSchema implements AbstractSchema {
     // Mark Lists/Maps as STRUCT to leverage StructToJsonNodeCodecAdapter for Avro schemas.
     // In Json schemas, List/Map will be of type GenericRecord.
     if (value instanceof List || value instanceof Map) {
-      //      GenericRecordWrapper wrapper = new
-      // GenericRecordWrapper(JacksonUtils.toJsonNode(value));
-      //      return registry.ensureAndUpdateSchema(path, wrapper);
       return STRUCT;
     }
     if (value instanceof GenericRecord) {

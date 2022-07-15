@@ -56,7 +56,7 @@ public class JSONFromStringWithLegacyStringTaskTest extends PulsarCCMTestBase {
       producer
           .newMessage()
           .key("838")
-          .value("{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"],\"udtField\":{\"f1\":99,\"f2\":\"random\"}}")
+          .value("{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"],\"udtField\":{\"intf\":99,\"stringf\":\"random\"}}")
           .send();
     }
     try {

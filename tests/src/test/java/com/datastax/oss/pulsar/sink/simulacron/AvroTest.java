@@ -70,8 +70,8 @@ public class AvroTest extends PulsarCCMTestBase {
         assertEquals(list, row.getList("e", String.class));
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
         assertEquals(value.size(), 2);
-        assertEquals(udt.getIntf(), value.getInt("stringf"));
-        assertEquals(udt.getStringf(), value.getString("intf"));
+        assertEquals(udt.getIntf(), value.getInt("intf"));
+        assertEquals(udt.getStringf(), value.getString("stringf"));
       }
       assertEquals(1, results.size());
     } finally {

@@ -39,11 +39,10 @@ public class PulsarStruct implements AbstractStruct {
       PulsarStruct parent, String fieldName, Object o, LocalSchemaRegistry schemaRegistry) {
 
     if (o instanceof GenericRecord) {
-      GenericRecord genericRecord = (GenericRecord) o;
       String schemaPath = parent.getPath() + "/" + fieldName;
 
       return new PulsarStruct(
-          genericRecord,
+          (GenericRecord) genericRecord,
           parent.eventTime,
           schemaRegistry.ensureAndUpdateSchema(schemaPath, genericRecord),
           schemaPath,
