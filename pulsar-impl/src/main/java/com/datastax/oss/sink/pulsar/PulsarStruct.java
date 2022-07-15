@@ -42,7 +42,7 @@ public class PulsarStruct implements AbstractStruct {
       String schemaPath = parent.getPath() + "/" + fieldName;
 
       return new PulsarStruct(
-          (GenericRecord) genericRecord,
+          (GenericRecord) o,
           parent.eventTime,
           schemaRegistry.ensureAndUpdateSchema(schemaPath, genericRecord),
           schemaPath,
