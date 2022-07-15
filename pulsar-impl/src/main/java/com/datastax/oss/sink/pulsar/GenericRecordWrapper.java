@@ -38,7 +38,7 @@ public class GenericRecordWrapper implements GenericRecord {
 
   @Override
   public byte[] getSchemaVersion() {
-    return new byte[1];
+    throw new UnsupportedOperationException("GenericRecordWrapper does not support schema version");
   }
 
   @Override
