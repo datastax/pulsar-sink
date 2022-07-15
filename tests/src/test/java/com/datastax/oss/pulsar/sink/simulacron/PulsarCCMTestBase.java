@@ -21,6 +21,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import com.datastax.oss.dsbulk.tests.ccm.CCMExtension;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,9 +42,10 @@ abstract class PulsarCCMTestBase {
   private final List<Map<String, Object>> taskConfigs = new ArrayList<>();
   protected final Map<String, Object> connectorProperties;
   protected final CqlSession session;
-  private final String keyspaceName;
+  protected final String keyspaceName;
 
-  private static final String DEFAULT_MAPPING = "a=key, b=value.field1";
+  private static final String DEFAULT_MAPPING =
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
 
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
@@ -60,10 +62,19 @@ abstract class PulsarCCMTestBase {
     keyspaceName = session.getKeyspace().orElse(CqlIdentifier.fromInternal("unknown")).asInternal();
 
     session.execute(
+        SimpleStatement.builder("CREATE TYPE udt (" + "f1 int," + "f2 text)")
+            .setTimeout(Duration.ofSeconds(10))
+            .build());
+
+    session.execute(
         SimpleStatement.builder(
                 "CREATE TABLE IF NOT EXISTS table1 ("
                     + "a int PRIMARY KEY, "
-                    + "b varchar, c TIMESTAMP)")
+                    + "b varchar, "
+                    + "c TIMESTAMP, "
+                    + "d map<text,text>, "
+                    + "e list<text>, "
+                    + "f FROZEN<udt>)") // Non-frozen User-Defined types are not supported in Cassandra 3.0
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -119,6 +130,9 @@ abstract class PulsarCCMTestBase {
 
     private String field1;
     private Long longField;
+    private Map<String, String> mapField;
+    private List<String> listField;
+    private Map<String, Object> udtField;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -129,6 +143,17 @@ abstract class PulsarCCMTestBase {
       this.longField = longField;
     }
 
+    public MyBean(
+        String stringField,
+        Map<String, String> mapField,
+        List<String> listField,
+        Map<String, Object> udtField) {
+      this(stringField, Instant.now().toEpochMilli());
+      this.mapField = mapField;
+      this.listField = listField;
+      this.udtField = udtField;
+    }
+
     public String getField1() {
       return field1;
     }
@@ -137,12 +162,36 @@ abstract class PulsarCCMTestBase {
       this.field1 = field1;
     }
 
+    public Map<String, String> getMapField() {
+      return mapField;
+    }
+
+    public void setMapField(Map<String, String> mapField) {
+      this.mapField = mapField;
+    }
+
+    public List<String> getListField() {
+      return listField;
+    }
+
+    public void setListField(List<String> listField) {
+      this.listField = listField;
+    }
+
     public Long getLongField() {
       return longField;
     }
 
     public void setLongField(Long longField) {
       this.longField = longField;
+    }
+
+    public Map<String, Object> getUdtField() {
+      return udtField;
+    }
+
+    public void setUdtField(Map<String, Object> udtField) {
+      this.udtField = udtField;
     }
   }
 }
