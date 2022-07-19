@@ -72,7 +72,7 @@ public class AvroTypeUtilTest {
     byte[] bytes = avroSchema.encode(pojo);
     GenericAvroRecord record =
         (GenericAvroRecord) GenericAvroSchema.of(avroSchema.getSchemaInfo()).decode(bytes);
-    assertTrue(AvroTypeUtil.shouldWrapAvroType(record, "map"));
+    assertTrue(AvroTypeUtil.shouldWrapAvroType(record, record.getField("map")));
   }
 
   @Test
@@ -84,6 +84,6 @@ public class AvroTypeUtilTest {
     byte[] bytes = avroSchema.encode(pojo);
     GenericAvroRecord record =
         (GenericAvroRecord) GenericAvroSchema.of(avroSchema.getSchemaInfo()).decode(bytes);
-    assertTrue(AvroTypeUtil.shouldWrapAvroType(record, "list"));
+    assertTrue(AvroTypeUtil.shouldWrapAvroType(record, record.getField("list")));
   }
 }

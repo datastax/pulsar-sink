@@ -28,11 +28,9 @@ public final class AvroTypeUtil {
 
   private AvroTypeUtil() {}
 
-  public static boolean shouldWrapAvroType(GenericRecord record, String fieldName) {
+  public static boolean shouldWrapAvroType(GenericRecord record, Object fieldValue) {
     try {
-      return record != null
-          && record.getSchemaType() == SchemaType.AVRO
-          && isMapOrList(record.getField(fieldName));
+      return record != null && record.getSchemaType() == SchemaType.AVRO && isMapOrList(fieldValue);
     } catch (UnsupportedOperationException ex) {
       log.warn("record {} does not implement getSchemaType", record);
       return false;

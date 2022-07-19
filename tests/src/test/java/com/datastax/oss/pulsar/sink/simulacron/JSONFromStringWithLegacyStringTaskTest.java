@@ -34,7 +34,8 @@ import org.awaitility.Awaitility;
 public class JSONFromStringWithLegacyStringTaskTest extends PulsarCCMTestBase {
 
   private static final String MAPPING =
-          "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
+
   public JSONFromStringWithLegacyStringTaskTest(CCMCluster ccm, CqlSession session)
       throws Exception {
     super(ccm, session, MAPPING);
@@ -58,7 +59,8 @@ public class JSONFromStringWithLegacyStringTaskTest extends PulsarCCMTestBase {
       producer
           .newMessage()
           .key("838")
-          .value("{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"],\"udtField\":{\"intf\":99,\"stringf\":\"random\"}}")
+          .value(
+              "{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"],\"udtField\":{\"intf\":99,\"stringf\":\"random\"}}")
           .send();
     }
     try {
