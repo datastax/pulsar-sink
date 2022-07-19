@@ -33,8 +33,11 @@ import org.awaitility.Awaitility;
 /** Use JSON from a schema less topic */
 public class JSONFromByteArrayTest extends PulsarCCMTestBase {
 
+  private static final String MAPPING =
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
+
   public JSONFromByteArrayTest(CCMCluster ccm, CqlSession session) throws Exception {
-    super(ccm, session);
+    super(ccm, session, MAPPING);
   }
 
   @Override
@@ -55,7 +58,9 @@ public class JSONFromByteArrayTest extends PulsarCCMTestBase {
       producer
           .newMessage()
           .key("838")
-          .value("{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"],\"udtField\":{\"f1\":99,\"f2\":\"random\"}}".getBytes(UTF_8))
+          .value(
+              "{\"field1\":\"value1\",\"mapField\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"listField\":[\"l1\",\"l2\"],\"udtField\":{\"intf\":99,\"stringf\":\"random\"}}"
+                  .getBytes(UTF_8))
           .send();
     }
     try {
@@ -72,12 +77,13 @@ public class JSONFromByteArrayTest extends PulsarCCMTestBase {
         log.info("ROW: " + row);
         assertEquals(838, row.getInt("a"));
         assertEquals("value1", row.getString("b"));
-        assertEquals(ImmutableMap.of("k1", "v1", "k2", "v2"), row.getMap("d", String.class, String.class));
+        assertEquals(
+            ImmutableMap.of("k1", "v1", "k2", "v2"), row.getMap("d", String.class, String.class));
         assertEquals(ImmutableList.of("l1", "l2"), row.getList("e", String.class));
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
         assertEquals(value.size(), 2);
-        assertEquals(99, value.getInt("f1"));
-        assertEquals("random", value.getString("f2"));
+        assertEquals(99, value.getInt("intf"));
+        assertEquals("random", value.getString("stringf"));
       }
       assertEquals(1, results.size());
     } finally {

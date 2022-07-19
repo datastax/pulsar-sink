@@ -15,15 +15,25 @@
  */
 package com.datastax.oss.sink.pulsar;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
+import com.datastax.oss.common.sink.AbstractSchema;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.client.api.schema.GenericSchema;
 import org.apache.pulsar.client.api.schema.RecordSchemaBuilder;
 import org.apache.pulsar.client.api.schema.SchemaBuilder;
+import org.apache.pulsar.client.impl.schema.generic.GenericAvroRecord;
+import org.apache.pulsar.client.impl.schema.generic.GenericAvroSchema;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.apache.pulsar.functions.api.Record;
 import org.junit.jupiter.api.Test;
 
 /** @author enrico.olivelli */
@@ -154,5 +164,53 @@ public class PulsarSchemaTest {
         registry.getAtPath(
             "persistent://tenant/namespace/topic_{\"type\":\"record\",\"name\":\"type\",\"fields\":[{\"name\":\"test\",\"type\":\"int\"},{\"name\":\"testNestedStruct\",\"type\":{\"type\":\"record\",\"name\":\"typeNested\",\"fields\":[{\"name\":\"testnested\",\"type\":\"long\"}]}},{\"name\":\"testNestedStruct2\",\"type\":\"typeNested\"}]}.testNestedStruct");
     assertSame(nestedStructSchemaByPath, nestedStructSchema);
+  }
+
+  @Test
+  public void testWithAvroMapAndList() {
+    LocalSchemaRegistry registry = new LocalSchemaRegistry();
+
+    MyPojo pojo = new MyPojo();
+    pojo.setName("name");
+    pojo.setMap(ImmutableMap.of("v1", "v2"));
+    pojo.setList(ImmutableList.of("l1", "l2"));
+    Schema avroSchema = Schema.AVRO(MyPojo.class);
+    byte[] bytes = avroSchema.encode(pojo);
+    GenericAvroRecord avro =
+        (GenericAvroRecord) GenericAvroSchema.of(avroSchema.getSchemaInfo()).decode(bytes);
+    Record<GenericRecord> record =
+        new PulsarRecordImpl(
+            "persistent://tenant/namespace/mytopic", "{\"pk\":15}", avro, avroSchema);
+    PulsarSchema schema = registry.ensureAndUpdateSchemaFromStruct(record);
+    PulsarStruct struct = PulsarStruct.ofRecord(record, registry);
+
+    assertSame(schema, struct.schema());
+    assertSame(PulsarSchema.STRING, schema.keySchema());
+    assertSame(schema, schema.valueSchema());
+    assertEquals(3, schema.fields().size());
+    assertSame(PulsarSchema.STRING, schema.field("name").schema());
+    assertSame(AbstractSchema.Type.STRUCT, schema.field("map").schema().type());
+    assertSame(AbstractSchema.Type.STRUCT, schema.field("list").schema().type());
+
+    assertTrue(struct.get("map") instanceof PulsarStruct);
+    assertTrue(struct.get("list") instanceof PulsarStruct);
+
+    PulsarStruct mapStruct = (PulsarStruct) struct.get("map");
+    PulsarStruct listStruct = (PulsarStruct) struct.get("list");
+
+    assertTrue(mapStruct.getRecord().getNativeObject() instanceof JsonNode);
+    assertTrue(listStruct.getRecord().getNativeObject() instanceof JsonNode);
+
+    JsonNode mapNode = (JsonNode) mapStruct.getRecord().getNativeObject();
+    JsonNode listNode = (JsonNode) listStruct.getRecord().getNativeObject();
+
+    ObjectMapper mapper = new ObjectMapper();
+    Map<String, String> convertedMap =
+        mapper.convertValue(mapNode, new TypeReference<Map<String, String>>() {});
+    List<String> convertedList =
+        mapper.convertValue(listNode, new TypeReference<List<String>>() {});
+
+    assertEquals(pojo.getMap(), convertedMap);
+    assertEquals(pojo.getList(), convertedList);
   }
 }

@@ -45,7 +45,7 @@ abstract class PulsarCCMTestBase {
   protected final String keyspaceName;
 
   private static final String DEFAULT_MAPPING =
-      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdt";
 
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
@@ -62,7 +62,7 @@ abstract class PulsarCCMTestBase {
     keyspaceName = session.getKeyspace().orElse(CqlIdentifier.fromInternal("unknown")).asInternal();
 
     session.execute(
-        SimpleStatement.builder("CREATE TYPE udt (" + "f1 int," + "f2 text)")
+        SimpleStatement.builder("CREATE TYPE udt (" + "intf int," + "stringf text)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -74,7 +74,9 @@ abstract class PulsarCCMTestBase {
                     + "c TIMESTAMP, "
                     + "d map<text,text>, "
                     + "e list<text>, "
-                    + "f FROZEN<udt>)") // Non-frozen User-Defined types are not supported in Cassandra 3.0
+                    + "f FROZEN<udt>, "
+                    + "g FROZEN<udt>)") // Non-frozen User-Defined types are not supported in
+            // Cassandra 3.0
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -126,13 +128,40 @@ abstract class PulsarCCMTestBase {
     }
   }
 
+  public static final class MyUdt {
+    public int intf;
+    private String stringf;
+
+    public MyUdt(int intf, String stringf) {
+      this.intf = intf;
+      this.stringf = stringf;
+    }
+
+    public int getIntf() {
+      return intf;
+    }
+
+    public void setIntf(int intf) {
+      this.intf = intf;
+    }
+
+    public String getStringf() {
+      return stringf;
+    }
+
+    public void setStringf(String stringf) {
+      this.stringf = stringf;
+    }
+  }
+
   public static final class MyBean {
 
     private String field1;
     private Long longField;
     private Map<String, String> mapField;
     private List<String> listField;
-    private Map<String, Object> udtField;
+    private MyUdt pojoUdt;
+    private Map<String, String> mapUdt;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -147,11 +176,13 @@ abstract class PulsarCCMTestBase {
         String stringField,
         Map<String, String> mapField,
         List<String> listField,
-        Map<String, Object> udtField) {
+        MyUdt pojoUdt,
+        Map<String, String> mapUdt) {
       this(stringField, Instant.now().toEpochMilli());
       this.mapField = mapField;
       this.listField = listField;
-      this.udtField = udtField;
+      this.pojoUdt = pojoUdt;
+      this.mapUdt = mapUdt;
     }
 
     public String getField1() {
@@ -186,12 +217,20 @@ abstract class PulsarCCMTestBase {
       this.longField = longField;
     }
 
-    public Map<String, Object> getUdtField() {
-      return udtField;
+    public MyUdt getPojoUdt() {
+      return pojoUdt;
     }
 
-    public void setUdtField(Map<String, Object> udtField) {
-      this.udtField = udtField;
+    public void setPojoUdt(MyUdt pojoUdt) {
+      this.pojoUdt = pojoUdt;
+    }
+
+    public Map<String, String> getMapUdt() {
+      return mapUdt;
+    }
+
+    public void setMapUdt(Map<String, String> mapUdt) {
+      this.mapUdt = mapUdt;
     }
   }
 }
