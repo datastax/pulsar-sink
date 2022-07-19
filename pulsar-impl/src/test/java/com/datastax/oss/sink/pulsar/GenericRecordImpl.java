@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.pulsar.client.api.schema.Field;
 import org.apache.pulsar.client.api.schema.GenericRecord;
+import org.apache.pulsar.common.schema.SchemaType;
 
 /** Generic record for tests */
 public class GenericRecordImpl implements GenericRecord {
@@ -66,6 +67,11 @@ public class GenericRecordImpl implements GenericRecord {
   @Override
   public Object getNativeObject() {
     return nativeObject;
+  }
+
+  @Override
+  public SchemaType getSchemaType() {
+    return SchemaType.AUTO_CONSUME;
   }
 
   @Override

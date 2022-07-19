@@ -17,6 +17,7 @@ package com.datastax.oss.sink.pulsar;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -53,16 +54,38 @@ public class AvroContainerTypeRecord implements GenericRecord {
     return fields;
   }
 
+  /** Ported from org.apache.pulsar.client.impl.schema.generic.GenericJsonRecord */
   @Override
   public Object getField(String fieldName) {
     JsonNode fn = ((JsonNode) this.nativeObject).get(fieldName);
     if (fn == null) {
       return null;
-    } else if (fn.isContainerNode()) {
+    }
+    if (fn.isContainerNode()) {
       List<Field> fields = populateFields(fn);
       return new AvroContainerTypeRecord(fn, fields);
+    } else if (fn.isBoolean()) {
+      return fn.asBoolean();
+    } else if (fn.isFloatingPointNumber()) {
+      return fn.asDouble();
+    } else if (fn.isBigInteger()) {
+      if (fn.canConvertToLong()) {
+        return fn.asLong();
+      } else {
+        return fn.asText();
+      }
+    } else if (fn.isNumber()) {
+      return fn.numberValue();
+    } else if (fn.isBinary()) {
+      try {
+        return fn.binaryValue();
+      } catch (IOException e) {
+        return fn.asText();
+      }
+    } else if (fn.isNull()) {
+      return null;
     } else {
-      return fn.isNull() ? null : fn.asText();
+      return fn.asText();
     }
   }
 

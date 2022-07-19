@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,12 +52,27 @@ public class AvroContainerTypeRecordTest {
 
   @Test
   void should_populate_map_fields() {
-    Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
+    Map<String, Object> map =
+        ImmutableMap.of(
+            "bool",
+            true,
+            "float",
+            1.2f,
+            "bigint",
+            new BigInteger("123"),
+            "number",
+            10,
+            "string",
+            "string");
     AvroContainerTypeRecord record = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(map));
     assertNotNull(record.getFields());
-    assertEquals(2, record.getFields().size());
-    assertEquals("v1", record.getField("k1"));
-    assertEquals("v2", record.getField("k2"));
+    assertEquals(5, record.getFields().size());
+    assertEquals(true, record.getField("bool"));
+    assertEquals(1.2d, Math.round((double) record.getField("float")), 1);
+    assertEquals(123L, record.getField("bigint"));
+    assertEquals(10, record.getField("number"));
+    assertEquals("string", record.getField("string"));
+    assertNull(record.getField("null"));
   }
 
   @Test

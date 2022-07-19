@@ -47,12 +47,6 @@ public class AvroTypeUtilTest {
   }
 
   @Test
-  void should_return_false_for_not_implemented_schema_type() {
-    GenericRecordImpl r = new GenericRecordImpl();
-    assertFalse(AvroTypeUtil.shouldWrapAvroType(r, "whatever"));
-  }
-
-  @Test
   void should_return_false_for_primitive_avro_type() {
     RecordSchemaBuilder builder = SchemaBuilder.record("type");
     builder.field("test").type(SchemaType.INT32);
