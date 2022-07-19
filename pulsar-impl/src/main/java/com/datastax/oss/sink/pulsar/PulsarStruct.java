@@ -19,6 +19,7 @@ import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractStruct;
 import com.datastax.oss.common.sink.util.SinkUtil;
 import java.util.Optional;
+import org.apache.avro.util.internal.JacksonUtils;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
@@ -83,11 +84,17 @@ public class PulsarStruct implements AbstractStruct {
   }
 
   @Override
-  public Object get(String field) {
-    if (SinkUtil.TIMESTAMP_VARNAME.equals(field)) {
+  public Object get(String fieldName) {
+    if (SinkUtil.TIMESTAMP_VARNAME.equals(fieldName)) {
       return eventTime.orElse(null);
     }
-    return wrap(this, field, record.getField(field), schemaRegistry);
+
+    Object field = record.getField(fieldName);
+    if (AvroTypeUtil.shouldWrapAvroType(this.record, field)) {
+      field = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(field));
+    }
+
+    return wrap(this, fieldName, field, schemaRegistry);
   }
 
   @Override

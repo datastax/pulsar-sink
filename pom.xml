@@ -70,6 +70,7 @@
     <jackson-databind.version>2.12.6.1</jackson-databind.version>
     <logback.version>1.2.9</logback.version>
     <jnr.version>3.1.15</jnr.version>
+    <avro.version>1.10.2</avro.version>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
   </properties>
   <dependencyManagement>

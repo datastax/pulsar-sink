@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.avro.util.internal.JacksonUtils;
 import org.apache.pulsar.client.api.schema.Field;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.slf4j.Logger;
@@ -122,6 +123,11 @@ public class PulsarSchema implements AbstractSchema {
   public final void update(String path, GenericRecord template, LocalSchemaRegistry registry) {
     for (Field f : template.getFields()) {
       Object value = template.getField(f);
+
+      // Wrap avro container types with a generic record to utilize the json codecs
+      if (AvroTypeUtil.shouldWrapAvroType(template, value)) {
+        value = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(value));
+      }
       // in case of null value we are going to use
       // a dummy (string) type
       // at the first occourrance of a non-null value
