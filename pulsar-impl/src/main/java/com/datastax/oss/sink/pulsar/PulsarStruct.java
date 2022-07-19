@@ -18,8 +18,6 @@ package com.datastax.oss.sink.pulsar;
 import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractStruct;
 import com.datastax.oss.common.sink.util.SinkUtil;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.avro.util.internal.JacksonUtils;
 import org.apache.pulsar.client.api.Schema;
@@ -44,20 +42,7 @@ public class PulsarStruct implements AbstractStruct {
       return new PulsarStruct(
           (GenericRecord) o,
           parent.eventTime,
-          schemaRegistry.ensureAndUpdateSchema(schemaPath, o),
-          schemaPath,
-          schemaRegistry);
-    } else if (parent.record.getNativeObject() instanceof org.apache.avro.generic.GenericRecord
-        && (o instanceof List || o instanceof Map)) {
-      // Convert Avro List/Map to JsonNode wrapped in a Struct. // This will allow reusing the
-      // StructToJsonNodeCodecAdapter out of the box
-      GenericRecordWrapper wrapper = new GenericRecordWrapper(JacksonUtils.toJsonNode(o));
-      String schemaPath = parent.getPath() + "/" + fieldName;
-
-      return new PulsarStruct(
-          wrapper,
-          parent.eventTime,
-          schemaRegistry.ensureAndUpdateSchema(schemaPath, wrapper),
+          schemaRegistry.ensureAndUpdateSchema(schemaPath, (GenericRecord) o),
           schemaPath,
           schemaRegistry);
     }
@@ -99,11 +84,17 @@ public class PulsarStruct implements AbstractStruct {
   }
 
   @Override
-  public Object get(String field) {
-    if (SinkUtil.TIMESTAMP_VARNAME.equals(field)) {
+  public Object get(String fieldName) {
+    if (SinkUtil.TIMESTAMP_VARNAME.equals(fieldName)) {
       return eventTime.orElse(null);
     }
-    return wrap(this, field, record.getField(field), schemaRegistry);
+
+    Object field = record.getField(fieldName);
+    if (AvroTypeUtil.shouldWrapAvroType(this.record, fieldName)) {
+      field = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(field));
+    }
+
+    return wrap(this, fieldName, field, schemaRegistry);
   }
 
   @Override

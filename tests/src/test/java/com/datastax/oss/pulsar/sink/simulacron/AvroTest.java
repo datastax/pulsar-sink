@@ -35,7 +35,8 @@ import org.awaitility.Awaitility;
 public class AvroTest extends PulsarCCMTestBase {
   private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
   private final List<String> list = ImmutableList.of("l1", "l2");
-  private final MyUdt udt = new MyUdt(99, "random");
+  private final MyUdt pojoUdt = new MyUdt(99, "random");
+  private final Map<String, String> mapUdt = ImmutableMap.of("intf", "36", "stringf", "udt text");
 
   public AvroTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
@@ -50,10 +51,14 @@ public class AvroTest extends PulsarCCMTestBase {
             .newProducer(Schema.AVRO(MyBean.class))
             .topic(pulsarSink.getTopic())
             .create()) {
-      producer.newMessage().key("838").value(new MyBean("value1", map, list, udt)).send();
+      producer
+          .newMessage()
+          .key("838")
+          .value(new MyBean("value1", map, list, pojoUdt, mapUdt))
+          .send();
     }
     try {
-      Awaitility.waitAtMost(2, TimeUnit.MINUTES)
+      Awaitility.waitAtMost(30, TimeUnit.SECONDS)
           .pollDelay(1, TimeUnit.SECONDS)
           .until(
               () -> {
@@ -70,8 +75,11 @@ public class AvroTest extends PulsarCCMTestBase {
         assertEquals(list, row.getList("e", String.class));
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
         assertEquals(value.size(), 2);
-        assertEquals(udt.getIntf(), value.getInt("intf"));
-        assertEquals(udt.getStringf(), value.getString("stringf"));
+        assertEquals(pojoUdt.getIntf(), value.getInt("intf"));
+        assertEquals(pojoUdt.getStringf(), value.getString("stringf"));
+        value = (DefaultUdtValue) row.getUdtValue("g");
+        assertEquals(Integer.valueOf(mapUdt.get("intf")), value.getInt("intf"));
+        assertEquals(mapUdt.get("stringf"), value.getString("stringf"));
       }
       assertEquals(1, results.size());
     } finally {

@@ -33,6 +33,8 @@ import org.awaitility.Awaitility;
 /** Use JSON from a schema less topic */
 public class JSONFromByteArrayTest extends PulsarCCMTestBase {
 
+  private static final String MAPPING =
+          "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
   public JSONFromByteArrayTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
   }

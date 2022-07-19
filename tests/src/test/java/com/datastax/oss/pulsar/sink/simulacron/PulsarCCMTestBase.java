@@ -45,7 +45,7 @@ abstract class PulsarCCMTestBase {
   protected final String keyspaceName;
 
   private static final String DEFAULT_MAPPING =
-      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.udtField";
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdt";
 
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
@@ -74,8 +74,9 @@ abstract class PulsarCCMTestBase {
                     + "c TIMESTAMP, "
                     + "d map<text,text>, "
                     + "e list<text>, "
-                    + "f FROZEN<udt>)") // Non-frozen User-Defined types are not supported in
-                                        // Cassandra 3.0
+                    + "f FROZEN<udt>, "
+                    + "g FROZEN<udt>)") // Non-frozen User-Defined types are not supported in
+            // Cassandra 3.0
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -159,7 +160,8 @@ abstract class PulsarCCMTestBase {
     private Long longField;
     private Map<String, String> mapField;
     private List<String> listField;
-    private MyUdt udtField;
+    private MyUdt pojoUdt;
+    private Map<String, String> mapUdt;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -171,11 +173,16 @@ abstract class PulsarCCMTestBase {
     }
 
     public MyBean(
-        String stringField, Map<String, String> mapField, List<String> listField, MyUdt udtField) {
+        String stringField,
+        Map<String, String> mapField,
+        List<String> listField,
+        MyUdt pojoUdt,
+        Map<String, String> mapUdt) {
       this(stringField, Instant.now().toEpochMilli());
       this.mapField = mapField;
       this.listField = listField;
-      this.udtField = udtField;
+      this.pojoUdt = pojoUdt;
+      this.mapUdt = mapUdt;
     }
 
     public String getField1() {
@@ -210,12 +217,20 @@ abstract class PulsarCCMTestBase {
       this.longField = longField;
     }
 
-    public MyUdt getUdtField() {
-      return udtField;
+    public MyUdt getPojoUdt() {
+      return pojoUdt;
     }
 
-    public void setUdtField(MyUdt udtField) {
-      this.udtField = udtField;
+    public void setPojoUdt(MyUdt pojoUdt) {
+      this.pojoUdt = pojoUdt;
+    }
+
+    public Map<String, String> getMapUdt() {
+      return mapUdt;
+    }
+
+    public void setMapUdt(Map<String, String> mapUdt) {
+      this.mapUdt = mapUdt;
     }
   }
 }

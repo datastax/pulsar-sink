@@ -213,36 +213,4 @@ public class PulsarSchemaTest {
     assertEquals(pojo.getMap(), convertedMap);
     assertEquals(pojo.getList(), convertedList);
   }
-
-  public static class MyPojo {
-
-    String name;
-    Map<String, String> map;
-
-    List<String> list;
-
-    public String getName() {
-      return name;
-    }
-
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    public Map<String, String> getMap() {
-      return map;
-    }
-
-    public void setMap(Map<String, String> map) {
-      this.map = map;
-    }
-
-    public List<String> getList() {
-      return list;
-    }
-
-    public void setList(List<String> list) {
-      this.list = list;
-    }
-  }
 }

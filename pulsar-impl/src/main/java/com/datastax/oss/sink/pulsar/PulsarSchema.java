@@ -17,16 +17,16 @@ package com.datastax.oss.sink.pulsar;
 
 import com.datastax.oss.common.sink.AbstractField;
 import com.datastax.oss.common.sink.AbstractSchema;
-import org.apache.pulsar.client.api.schema.Field;
-import org.apache.pulsar.client.api.schema.GenericRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.avro.util.internal.JacksonUtils;
+import org.apache.pulsar.client.api.schema.Field;
+import org.apache.pulsar.client.api.schema.GenericRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Datatype. */
 public class PulsarSchema implements AbstractSchema {
@@ -41,8 +41,6 @@ public class PulsarSchema implements AbstractSchema {
   public static final PulsarSchema STRING = new PulsarSchema(AbstractSchema.Type.STRING);
   public static final PulsarSchema BYTES = new PulsarSchema(AbstractSchema.Type.BYTES);
   public static final PulsarSchema FIRST_VALUE_NULL = new PulsarSchema(Type.STRING, false);
-
-  public static final PulsarSchema STRUCT = new PulsarSchema(Type.STRUCT, false);
 
   public static PulsarSchema of(String path, Object value, LocalSchemaRegistry registry) {
     if (value == null) {
@@ -76,11 +74,6 @@ public class PulsarSchema implements AbstractSchema {
     }
     if (value instanceof Short) {
       return INT16;
-    }
-    // Mark Lists/Maps as STRUCT to leverage StructToJsonNodeCodecAdapter for Avro schemas.
-    // In Json schemas, List/Map will be of type GenericRecord.
-    if (value instanceof List || value instanceof Map) {
-      return STRUCT;
     }
     if (value instanceof GenericRecord) {
       return registry.ensureAndUpdateSchema(path, (GenericRecord) value);
@@ -130,6 +123,11 @@ public class PulsarSchema implements AbstractSchema {
   public final void update(String path, GenericRecord template, LocalSchemaRegistry registry) {
     for (Field f : template.getFields()) {
       Object value = template.getField(f);
+
+      // Wrap avro container types with a generic record to utilize the json codecs
+      if (AvroTypeUtil.shouldWrapAvroType(template, f.getName())) {
+        value = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(value));
+      }
       // in case of null value we are going to use
       // a dummy (string) type
       // at the first occourrance of a non-null value
