@@ -19,12 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.data.DefaultUdtValue;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
@@ -36,10 +39,32 @@ public class JSONTest extends PulsarCCMTestBase {
 
   private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
   private final List<String> list = ImmutableList.of("l1", "l2");
-
-  private final MyUdt pojoUdt = new MyUdt(99, "random");
-
-  private final Map<String, String> mapUdt = ImmutableMap.of("intf", "36", "stringf", "udt text");
+  private final List<Map<String, String>> listOfMaps = ImmutableList.of(map, map);
+  private final Set<String> set = ImmutableSet.of("s1", "s2");
+  private final Set<Map<String, String>> setOfMaps = ImmutableSet.of(map, map);
+  private final Map<String, List<String>> mapOfLists = ImmutableMap.of("k1", list, "k2", list);
+  private final Map<String, Set<String>> mapOfSets = ImmutableMap.of("k1", set, "k2", set);
+  private final Set<List<String>> setOfLists = ImmutableSet.of(list);
+  private final List<Set<String>> listOfSets = ImmutableList.of(set, set);
+  private final MyUdt pojoUdt =
+      new MyUdt(
+          99,
+          "random",
+          ImmutableList.of("l1", "l2"),
+          ImmutableSet.of(3, 4),
+          ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
+  private final Map<String, Object> mapUdt =
+      ImmutableMap.of(
+          "intf",
+          36,
+          "stringf",
+          "udt text",
+          "listf",
+          ImmutableList.of("l1", "l2"),
+          "setf",
+          ImmutableSet.of(3, 4),
+          "mapf",
+          ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
 
   public JSONTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
@@ -58,7 +83,21 @@ public class JSONTest extends PulsarCCMTestBase {
       producer
           .newMessage()
           .key("838")
-          .value(new MyBean("value1", map, list, pojoUdt, mapUdt))
+          .value(
+              new MyBean(
+                  "value1",
+                  map,
+                  list,
+                  set,
+                  listOfMaps,
+                  setOfMaps,
+                  mapOfLists,
+                  mapOfSets,
+                  listOfSets,
+                  setOfLists,
+                  pojoUdt,
+                  mapUdt,
+                  null))
           .send();
     }
     try {
@@ -77,13 +116,52 @@ public class JSONTest extends PulsarCCMTestBase {
         assertEquals("value1", row.getString("b"));
         assertEquals(map, row.getMap("d", String.class, String.class));
         assertEquals(list, row.getList("e", String.class));
+        assertEquals(set, row.getSet("h", String.class));
+
+        GenericType<List<Map<String, String>>> listOfMapsType =
+            new GenericType<List<Map<String, String>>>() {};
+        List<Map<String, String>> mapsList = row.get("i", listOfMapsType);
+        assertEquals(listOfMaps, mapsList);
+        GenericType<Set<Map<String, String>>> setOfMapsType =
+            new GenericType<Set<Map<String, String>>>() {};
+        Set<Map<String, String>> mapsSet = row.get("j", setOfMapsType);
+        assertEquals(setOfMaps, mapsSet);
+
+        GenericType<Map<String, List<String>>> mapOfListsType =
+            new GenericType<Map<String, List<String>>>() {};
+        Map<String, List<String>> listsMap = row.get("k", mapOfListsType);
+        assertEquals(mapOfLists, listsMap);
+
+        GenericType<Map<String, Set<String>>> mapOfSetsType =
+            new GenericType<Map<String, Set<String>>>() {};
+        Map<String, Set<String>> setsMap = row.get("l", mapOfSetsType);
+        assertEquals(mapOfSets, setsMap);
+
+        GenericType<Set<List<String>>> setOfListsType = new GenericType<Set<List<String>>>() {};
+        Set<List<String>> listsSet = row.get("m", setOfListsType);
+        assertEquals(setOfLists, listsSet);
+        GenericType<List<Set<String>>> listOfSetsType = new GenericType<List<Set<String>>>() {};
+        List<Set<String>> setsList = row.get("n", listOfSetsType);
+        assertEquals(listOfSets, setsList);
+
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
-        assertEquals(value.size(), 2);
+        assertEquals(value.size(), 5);
         assertEquals(pojoUdt.getIntf(), value.getInt("intf"));
         assertEquals(pojoUdt.getStringf(), value.getString("stringf"));
+
+        GenericType<List<String>> udtListType = new GenericType<List<String>>() {};
+        assertEquals(pojoUdt.getListf(), value.get("listf", udtListType));
+        GenericType<Set<Integer>> udtSetType = new GenericType<Set<Integer>>() {};
+        assertEquals(pojoUdt.getSetf(), value.get("setf", udtSetType));
+        GenericType<Map<String, Double>> udtMapType = new GenericType<Map<String, Double>>() {};
+        assertEquals(pojoUdt.getMapf(), value.get("mapf", udtMapType));
+
         value = (DefaultUdtValue) row.getUdtValue("g");
-        assertEquals(Integer.valueOf(mapUdt.get("intf")), value.getInt("intf"));
+        assertEquals(mapUdt.get("intf"), value.getInt("intf"));
         assertEquals(mapUdt.get("stringf"), value.getString("stringf"));
+        assertEquals(mapUdt.get("listf"), value.get("listf", udtListType));
+        assertEquals(mapUdt.get("setf"), value.get("setf", udtSetType));
+        assertEquals(mapUdt.get("mapf"), value.get("mapf", udtMapType));
       }
       assertEquals(1, results.size());
     } finally {

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +46,8 @@ abstract class PulsarCCMTestBase {
   protected final String keyspaceName;
 
   private static final String DEFAULT_MAPPING =
-      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdt";
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdt, h=value.setField, "
+          + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets";
 
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
@@ -62,7 +64,8 @@ abstract class PulsarCCMTestBase {
     keyspaceName = session.getKeyspace().orElse(CqlIdentifier.fromInternal("unknown")).asInternal();
 
     session.execute(
-        SimpleStatement.builder("CREATE TYPE udt (" + "intf int," + "stringf text)")
+        SimpleStatement.builder(
+                "CREATE TYPE udt (intf int, stringf text, listf frozen<list<text>>, setf frozen<set<int>>, mapf frozen<map<text, double>>)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -75,8 +78,15 @@ abstract class PulsarCCMTestBase {
                     + "d map<text,text>, "
                     + "e list<text>, "
                     + "f FROZEN<udt>, "
-                    + "g FROZEN<udt>)") // Non-frozen User-Defined types are not supported in
-            // Cassandra 3.0
+                    + "g FROZEN<udt>, " // Non-frozen User-Defined types are not supported in
+                    // Cassandra 3.0
+                    + "h set<text>, "
+                    + "i list<frozen<map<text,text>>>, "
+                    + "j set<frozen<map<text,text>>>, "
+                    + "k map<text,frozen<list<text>>>, "
+                    + "l map<text,frozen<set<text>>>, "
+                    + "m set<frozen<list<text>>>, "
+                    + "n list<frozen<set<text>>>)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
 
@@ -131,10 +141,17 @@ abstract class PulsarCCMTestBase {
   public static final class MyUdt {
     public int intf;
     private String stringf;
+    private List<String> listf;
+    private Set<Integer> setf;
+    private Map<String, Double> mapf;
 
-    public MyUdt(int intf, String stringf) {
+    public MyUdt(
+        int intf, String stringf, List<String> listf, Set<Integer> setf, Map<String, Double> mapf) {
       this.intf = intf;
       this.stringf = stringf;
+      this.listf = listf;
+      this.setf = setf;
+      this.mapf = mapf;
     }
 
     public int getIntf() {
@@ -152,6 +169,30 @@ abstract class PulsarCCMTestBase {
     public void setStringf(String stringf) {
       this.stringf = stringf;
     }
+
+    public List<String> getListf() {
+      return listf;
+    }
+
+    public void setListf(List<String> listf) {
+      this.listf = listf;
+    }
+
+    public Set<Integer> getSetf() {
+      return setf;
+    }
+
+    public void setSetf(Set<Integer> setf) {
+      this.setf = setf;
+    }
+
+    public Map<String, Double> getMapf() {
+      return mapf;
+    }
+
+    public void setMapf(Map<String, Double> mapf) {
+      this.mapf = mapf;
+    }
   }
 
   public static final class MyBean {
@@ -160,8 +201,17 @@ abstract class PulsarCCMTestBase {
     private Long longField;
     private Map<String, String> mapField;
     private List<String> listField;
+    private Set<String> setField;
+    private List<Map<String, String>> listOfMaps;
+    private Set<Map<String, String>> setOfMaps;
+    private Map<String, List<String>> mapOfLists;
+    private Map<String, Set<String>> mapOfSets;
+    private List<Set<String>> listOfSets;
+    private Set<List<String>> setOfLists;
     private MyUdt pojoUdt;
-    private Map<String, String> mapUdt;
+    private Map<String, Object> mapUdt;
+
+    private Map<String, String> mapUdtFixedType;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -176,13 +226,29 @@ abstract class PulsarCCMTestBase {
         String stringField,
         Map<String, String> mapField,
         List<String> listField,
+        Set<String> setField,
+        List<Map<String, String>> listOfMaps,
+        Set<Map<String, String>> setOfMaps,
+        Map<String, List<String>> mapOfLists,
+        Map<String, Set<String>> mapOfSets,
+        List<Set<String>> listOfSets,
+        Set<List<String>> setOfLists,
         MyUdt pojoUdt,
-        Map<String, String> mapUdt) {
+        Map<String, Object> mapUdt,
+        Map<String, String> mapUdtFixedType) {
       this(stringField, Instant.now().toEpochMilli());
       this.mapField = mapField;
       this.listField = listField;
+      this.setField = setField;
+      this.listOfMaps = listOfMaps;
+      this.setOfMaps = setOfMaps;
+      this.mapOfLists = mapOfLists;
+      this.mapOfSets = mapOfSets;
+      this.setOfLists = setOfLists;
+      this.listOfSets = listOfSets;
       this.pojoUdt = pojoUdt;
       this.mapUdt = mapUdt;
+      this.mapUdtFixedType = mapUdtFixedType;
     }
 
     public String getField1() {
@@ -209,6 +275,62 @@ abstract class PulsarCCMTestBase {
       this.listField = listField;
     }
 
+    public Set<String> getSetField() {
+      return setField;
+    }
+
+    public void setSetField(Set<String> setField) {
+      this.setField = setField;
+    }
+
+    public List<Map<String, String>> getListOfMaps() {
+      return listOfMaps;
+    }
+
+    public void setListOfMaps(List<Map<String, String>> listOfMaps) {
+      this.listOfMaps = listOfMaps;
+    }
+
+    public Set<Map<String, String>> getSetOfMaps() {
+      return setOfMaps;
+    }
+
+    public void setSetOfMaps(Set<Map<String, String>> setOfMaps) {
+      this.setOfMaps = setOfMaps;
+    }
+
+    public Map<String, List<String>> getMapOfLists() {
+      return mapOfLists;
+    }
+
+    public void setMapOfLists(Map<String, List<String>> mapOfLists) {
+      this.mapOfLists = mapOfLists;
+    }
+
+    public Map<String, Set<String>> getMapOfSets() {
+      return mapOfSets;
+    }
+
+    public void setMapOfSets(Map<String, Set<String>> mapOfSets) {
+      this.mapOfSets = mapOfSets;
+    }
+
+    public List<Set<String>> getListOfSets() {
+      return listOfSets;
+    }
+
+    public void setListOfSets(List<Set<String>> listOfSets) {
+      this.listOfSets = listOfSets;
+    }
+
+    public Set<List<String>> getSetOfLists() {
+      return setOfLists;
+    }
+
+    public void setSetOfLists(Set<List<String>> setOfLists) {
+      this.setOfLists = setOfLists;
+    }
+
     public Long getLongField() {
       return longField;
     }
@@ -225,12 +347,20 @@ abstract class PulsarCCMTestBase {
       this.pojoUdt = pojoUdt;
     }
 
-    public Map<String, String> getMapUdt() {
+    public Map<String, Object> getMapUdt() {
       return mapUdt;
     }
 
-    public void setMapUdt(Map<String, String> mapUdt) {
+    public void setMapUdt(Map<String, Object> mapUdt) {
       this.mapUdt = mapUdt;
+    }
+
+    public Map<String, String> getMapUdtFixedType() {
+      return mapUdtFixedType;
+    }
+
+    public void setMapUdtFixedType(Map<String, String> mapUdtFixedType) {
+      this.mapUdtFixedType = mapUdtFixedType;
     }
   }
 }
