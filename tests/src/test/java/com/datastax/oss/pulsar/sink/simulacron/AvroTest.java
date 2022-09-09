@@ -37,8 +37,8 @@ import org.awaitility.Awaitility;
 /** Use AVRO */
 public class AvroTest extends PulsarCCMTestBase {
   private static final String MAPPING =
-          "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdtFixedType, h=value.setField, "
-                  + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets";
+      "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdtFixedType, h=value.setField, "
+          + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets";
   private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
   private final List<String> list = ImmutableList.of("l1", "l2");
   private final Set<String> set = ImmutableSet.of("s1", "s2");
@@ -57,15 +57,19 @@ public class AvroTest extends PulsarCCMTestBase {
           ImmutableSet.of(3, 4),
           ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
   /**
-   * AVRO schema with Pulsar doesn't work well with mixed value types on the map - the values will be of "org.apache.avro.generic.GenericData$Record"
-   * with the following limitations:
-   *  1. Using Map<String, Object> will result is "Unknown datum class: class
-   *    org.apache.avro.generic.GenericData$Record". because we try to convert those types to json via org.apache.avro.util.internal.JacksonUtils.toJson
-   *  2. Even without json conversion (which is our implementation detail) Also sending to Pulsar will result in a GenericObject with keys only and the value will be empty.
+   * AVRO schema with Pulsar doesn't work well with mixed value types on the map - the values will
+   * be of "org.apache.avro.generic.GenericData$Record" with the following limitations: 1. Using
+   * Map<String, Object> will result is "Unknown datum class: class
+   * org.apache.avro.generic.GenericData$Record". because we try to convert those types to json via
+   * org.apache.avro.util.internal.JacksonUtils.toJson 2. Even without json conversion (which is our
+   * implementation detail) Also sending to Pulsar will result in a GenericObject with keys only and
+   * the value will be empty.
    *
-   *  As a workaround for the test, the complex types are disabled by passing empty values. This use case will be covered with the JSON schema.
+   * <p>As a workaround for the test, the complex types are disabled by passing empty values. This
+   * use case will be covered with the JSON schema.
    *
-   *  The alternative for the user is to use Pojo's with exact types to represent UDT's or switch to JSON schema.
+   * <p>The alternative for the user is to use Pojo's with exact types to represent UDT's or switch
+   * to JSON schema.
    */
   private final Map<String, String> mapUdt =
       ImmutableMap.of("intf", "36", "stringf", "udt text", "listf", "", "setf", "", "mapf", "");
