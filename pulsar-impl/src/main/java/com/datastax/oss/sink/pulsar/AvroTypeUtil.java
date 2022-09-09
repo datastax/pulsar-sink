@@ -15,16 +15,27 @@
  */
 package com.datastax.oss.sink.pulsar;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.avro.Conversion;
+import org.apache.avro.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.common.schema.SchemaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class AvroTypeUtil {
 
-  private static final Logger log = LoggerFactory.getLogger(AvroTypeUtil.class);
+  private static Map<String, Conversion<?>> logicalTypeConverters = new HashMap<>();
+
+  static {
+    logicalTypeConverters.put(
+        CqlLogicalTypes.CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
+    logicalTypeConverters.put(
+        CqlLogicalTypes.CQL_DURATION, new CqlLogicalTypes.CqlDurationLogicalType());
+    logicalTypeConverters.put(
+        CqlLogicalTypes.CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
+  }
 
   private AvroTypeUtil() {}
 
@@ -32,7 +43,46 @@ public final class AvroTypeUtil {
     return record != null && record.getSchemaType() == SchemaType.AVRO && isMapOrList(fieldValue);
   }
 
+  public static boolean shouldHandleLogicalType(GenericRecord record, Object fieldValue) {
+    if (record == null && record.getSchemaType() != SchemaType.AVRO) {
+      return false;
+    }
+    if (isVarint(fieldValue)) {
+      return true;
+    } else if (fieldValue instanceof GenericRecord
+        && ((GenericRecord) fieldValue).getNativeObject()
+            instanceof org.apache.avro.generic.GenericRecord) {
+      org.apache.avro.generic.GenericRecord avroRecord =
+          (org.apache.avro.generic.GenericRecord) ((GenericRecord) fieldValue).getNativeObject();
+      return logicalTypeConverters.containsKey(avroRecord.getSchema().getName());
+    }
+    return false;
+  }
+
+  public static Object handleLogicalType(Object value) {
+    if (isVarint(value)) {
+      return logicalTypeConverters
+          .get(CqlLogicalTypes.CQL_VARINT)
+          .fromBytes((ByteBuffer) value, Schema.create(Schema.Type.BYTES), null)
+          .toString();
+    } else if (value instanceof GenericRecord) {
+      org.apache.avro.generic.GenericRecord record =
+          (org.apache.avro.generic.GenericRecord) ((GenericRecord) value).getNativeObject();
+      return logicalTypeConverters
+          .get(record.getSchema().getName())
+          .fromRecord(record, record.getSchema(), record.getSchema().getLogicalType())
+          .toString(); // this will utilize the StringToDuration & StringToBigDecimal
+                       // ConvertingCodecs
+    }
+
+    throw new UnsupportedOperationException("cannot handle logical type for " + value);
+  }
+
   private static boolean isMapOrList(Object mapOrList) {
     return mapOrList instanceof Map || mapOrList instanceof List;
+  }
+
+  private static boolean isVarint(Object varint) {
+    return varint instanceof ByteBuffer;
   }
 }

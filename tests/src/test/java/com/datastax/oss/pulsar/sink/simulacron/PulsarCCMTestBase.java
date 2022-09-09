@@ -86,8 +86,10 @@ abstract class PulsarCCMTestBase {
                     + "k map<text,frozen<list<text>>>, "
                     + "l map<text,frozen<set<text>>>, "
                     + "m set<frozen<list<text>>>, "
-                    + "n list<frozen<set<text>>>)")
-            .setTimeout(Duration.ofSeconds(10))
+                    + "n decimal, "
+                    + "o duration, "
+                    + "p uuid, "
+                    + "q varint)")
             .build());
 
     connectorProperties = new HashMap<>();
