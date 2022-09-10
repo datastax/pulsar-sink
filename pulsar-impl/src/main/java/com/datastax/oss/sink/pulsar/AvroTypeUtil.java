@@ -37,12 +37,6 @@ public final class AvroTypeUtil {
   private static Map<String, Conversion<?>> logicalTypeConverters = new HashMap<>();
   private static boolean decodeCDCDataTypes;
 
-  static {
-    logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
-    logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
-    logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
-  }
-
   private AvroTypeUtil() {}
 
   public static boolean shouldWrapAvroType(GenericRecord record, Object fieldValue) {
@@ -136,9 +130,15 @@ public final class AvroTypeUtil {
   }
 
   public static void enableDecodeCDCDataTypes() {
+    // Register custom logical types so Avro schema API enables the getLogicalType()
     LogicalTypes.register(CQL_DECIMAL, schema -> new CqlLogicalTypes.CqlDecimalLogicalType());
     LogicalTypes.register(CQL_DURATION, schema -> new CqlLogicalTypes.CqlDurationLogicalType());
     LogicalTypes.register(CQL_VARINT, schema -> new CqlLogicalTypes.CqlVarintLogicalType());
+
+    // Register logical type converters
+    logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
+    logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
+    logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
 
     decodeCDCDataTypes = true;
   }
