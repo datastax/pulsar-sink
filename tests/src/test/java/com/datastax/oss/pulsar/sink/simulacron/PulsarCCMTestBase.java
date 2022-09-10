@@ -86,10 +86,11 @@ abstract class PulsarCCMTestBase {
                     + "k map<text,frozen<list<text>>>, "
                     + "l map<text,frozen<set<text>>>, "
                     + "m set<frozen<list<text>>>, "
-                    + "n decimal, "
-                    + "o duration, "
-                    + "p uuid, "
-                    + "q varint)")
+                    + "n list<frozen<set<text>>>, "
+                    + "o decimal, "
+                    + "p duration, "
+                    + "q uuid, "
+                    + "r varint)")
             .build());
 
     connectorProperties = new HashMap<>();

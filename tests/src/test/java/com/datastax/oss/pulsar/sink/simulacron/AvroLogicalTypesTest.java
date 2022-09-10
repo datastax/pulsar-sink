@@ -54,7 +54,7 @@ import org.awaitility.Awaitility;
 /** Use AVRO */
 public class AvroLogicalTypesTest extends PulsarCCMTestBase {
   private static final String MAPPING =
-      "a=key, n=value.decimalField, o=value.durationField, p=value.uuidField, q=value.varintField";
+      "a=key, o=value.decimalField, p=value.durationField, q=value.uuidField, r=value.varintField";
 
   // DECIMAL
   private static final CqlDecimalLogicalType CQL_DECIMAL_LOGICAL_TYPE = new CqlDecimalLogicalType();
@@ -206,24 +206,24 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
           .pollDelay(1, TimeUnit.SECONDS)
           .until(
               () -> {
-                List<Row> results = session.execute("SELECT a, n, o, p, q FROM table1").all();
+                List<Row> results = session.execute("SELECT a, o, p, q, r FROM table1").all();
                 return results.size() > 1;
               });
 
-      List<Row> results = session.execute("SELECT a, n, o, p, q FROM table1").all();
+      List<Row> results = session.execute("SELECT a, o, p, q, r FROM table1").all();
       assertEquals(2, results.size());
 
       assertEquals(838, results.get(0).getInt("a"));
-      assertEquals(decimal, results.get(0).getBigDecimal("n"));
-      assertEquals(duration, results.get(0).getCqlDuration("o"));
-      assertEquals(uuid, results.get(0).getUuid("p"));
-      assertEquals(bigInteger, results.get(0).getBigInteger("q"));
+      assertEquals(decimal, results.get(0).getBigDecimal("o"));
+      assertEquals(duration, results.get(0).getCqlDuration("p"));
+      assertEquals(uuid, results.get(0).getUuid("q"));
+      assertEquals(bigInteger, results.get(0).getBigInteger("r"));
 
       assertEquals(839, results.get(1).getInt("a"));
-      assertNull(results.get(1).getBigDecimal("n"));
-      assertNull(results.get(1).getCqlDuration("o"));
-      assertNull(results.get(1).getUuid("p"));
-      assertNull(results.get(1).getBigInteger("q"));
+      assertNull(results.get(1).getBigDecimal("o"));
+      assertNull(results.get(1).getCqlDuration("p"));
+      assertNull(results.get(1).getUuid("q"));
+      assertNull(results.get(1).getBigInteger("r"));
 
     } finally {
       // always print Sink logs
