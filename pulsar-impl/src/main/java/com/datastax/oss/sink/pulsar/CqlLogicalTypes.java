@@ -29,7 +29,7 @@ public class CqlLogicalTypes {
   public static final String CQL_DECIMAL = "cql_decimal";
   public static final String CQL_DURATION = "cql_duration";
 
-  public static class CqlDurationLogicalType extends Conversion<CqlDuration> {
+  public static class CqlDurationConversion extends Conversion<CqlDuration> {
     @Override
     public Class<CqlDuration> getConvertedType() {
       return CqlDuration.class;
@@ -86,6 +86,24 @@ public class CqlLogicalTypes {
       byte[] arr = new byte[value.remaining()];
       value.duplicate().get(arr);
       return new BigInteger(arr);
+    }
+  }
+
+  static class CqlDecimalLogicalType extends LogicalType {
+    public CqlDecimalLogicalType() {
+      super(CQL_DECIMAL);
+    }
+  }
+
+  static class CqlDurationLogicalType extends LogicalType {
+    public CqlDurationLogicalType() {
+      super(CQL_DURATION);
+    }
+  }
+
+  static class CqlVarintLogicalType extends LogicalType {
+    public CqlVarintLogicalType() {
+      super(CQL_VARINT);
     }
   }
 }

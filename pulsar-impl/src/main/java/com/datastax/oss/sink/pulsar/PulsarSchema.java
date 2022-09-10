@@ -124,8 +124,8 @@ public class PulsarSchema implements AbstractSchema {
     for (Field f : template.getFields()) {
       Object value = template.getField(f);
 
-      if (AvroTypeUtil.shouldHandleLogicalType(template, value)) {
-        value = AvroTypeUtil.handleLogicalType(value);
+      if (AvroTypeUtil.shouldHandleCassandraCDCLogicalType(template, f.getName())) {
+        value = AvroTypeUtil.handleCassandraCDCLogicalType(template, f.getName(), value);
       } else if (AvroTypeUtil.shouldWrapAvroType(template, value)) {
         // Wrap avro container types with a generic record to utilize the json codecs
         value = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(value));

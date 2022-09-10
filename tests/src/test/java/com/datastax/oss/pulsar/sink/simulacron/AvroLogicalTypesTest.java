@@ -16,6 +16,7 @@
 package com.datastax.oss.pulsar.sink.simulacron;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
@@ -113,15 +114,50 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
 
   public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session, MAPPING);
+
+    this.connectorProperties.put("decodeCDCDataTypes", true);
   }
 
   @Override
   protected void performTest(final PulsarSinkTester pulsarSink) throws PulsarClientException {
     List<org.apache.avro.Schema.Field> fields = new ArrayList<>();
-    fields.add(new org.apache.avro.Schema.Field("decimalField", decimalType));
-    fields.add(new org.apache.avro.Schema.Field("durationField", durationType));
-    fields.add(new org.apache.avro.Schema.Field("uuidField", uuidType));
-    fields.add(new org.apache.avro.Schema.Field("varintField", varintType));
+
+    org.apache.avro.Schema.Field decimalSchema =
+        new org.apache.avro.Schema.Field("decimalField", decimalType);
+    org.apache.avro.Schema.Field optionalDecimalSchema =
+        new org.apache.avro.Schema.Field(
+            "decimalField",
+            SchemaBuilder.unionOf().nullType().and().type(decimalSchema.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+    fields.add(optionalDecimalSchema);
+    org.apache.avro.Schema.Field durationSchema =
+        new org.apache.avro.Schema.Field("durationField", durationType);
+    org.apache.avro.Schema.Field optionalDurationsSchema =
+        new org.apache.avro.Schema.Field(
+            "durationField",
+            SchemaBuilder.unionOf().nullType().and().type(durationSchema.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+    fields.add(optionalDurationsSchema);
+    org.apache.avro.Schema.Field uuidSchema =
+        new org.apache.avro.Schema.Field("uuidField", uuidType);
+    org.apache.avro.Schema.Field optionalUUIDSchema =
+        new org.apache.avro.Schema.Field(
+            "uuidField",
+            SchemaBuilder.unionOf().nullType().and().type(uuidSchema.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+    fields.add(optionalUUIDSchema);
+    org.apache.avro.Schema.Field varintSchema =
+        new org.apache.avro.Schema.Field("varintField", varintType);
+    org.apache.avro.Schema.Field optionalVarintSchema =
+        new org.apache.avro.Schema.Field(
+            "varintField",
+            SchemaBuilder.unionOf().nullType().and().type(varintSchema.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+    fields.add(optionalVarintSchema);
 
     org.apache.avro.generic.GenericRecord decimalRecord = new GenericData.Record(decimalType);
     BigDecimal decimal = new BigDecimal(314.16);
@@ -144,6 +180,8 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     BigInteger bigInteger = new BigInteger("314");
     logicalTypesRecord.put("varintField", ByteBuffer.wrap(bigInteger.toByteArray()));
     Schema pulsarSchema = new NativeSchemaWrapper(avroSchema, SchemaType.AVRO);
+    org.apache.avro.generic.GenericRecord nullLogicalTypesRecord =
+        new GenericData.Record(avroSchema);
 
     try (Producer<byte[]> producer =
         pulsarSink
@@ -156,6 +194,12 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
           .key("838")
           .value(serializeAvroGenericRecord(logicalTypesRecord, avroSchema))
           .send();
+
+      producer
+          .newMessage()
+          .key("839")
+          .value(serializeAvroGenericRecord(nullLogicalTypesRecord, avroSchema))
+          .send();
     }
     try {
       Awaitility.waitAtMost(30, TimeUnit.SECONDS)
@@ -163,19 +207,24 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
           .until(
               () -> {
                 List<Row> results = session.execute("SELECT a, n, o, p, q FROM table1").all();
-                return results.size() > 0;
+                return results.size() > 1;
               });
 
       List<Row> results = session.execute("SELECT a, n, o, p, q FROM table1").all();
-      for (Row row : results) {
-        log.info("ROW: " + row);
-        assertEquals(838, row.getInt("a"));
-        assertEquals(decimal, row.getBigDecimal("n"));
-        assertEquals(duration, row.getCqlDuration("o"));
-        assertEquals(uuid, row.getUuid("p"));
-        assertEquals(bigInteger, row.getBigInteger("q"));
-      }
-      assertEquals(1, results.size());
+      assertEquals(2, results.size());
+
+      assertEquals(838, results.get(0).getInt("a"));
+      assertEquals(decimal, results.get(0).getBigDecimal("n"));
+      assertEquals(duration, results.get(0).getCqlDuration("o"));
+      assertEquals(uuid, results.get(0).getUuid("p"));
+      assertEquals(bigInteger, results.get(0).getBigInteger("q"));
+
+      assertEquals(839, results.get(1).getInt("a"));
+      assertNull(results.get(1).getBigDecimal("n"));
+      assertNull(results.get(1).getCqlDuration("o"));
+      assertNull(results.get(1).getUuid("p"));
+      assertNull(results.get(1).getBigInteger("q"));
+
     } finally {
       // always print Sink logs
       pulsarSink.dumpLogs();
