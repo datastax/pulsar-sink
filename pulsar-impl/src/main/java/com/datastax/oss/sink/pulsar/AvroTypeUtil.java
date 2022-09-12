@@ -129,17 +129,24 @@ public final class AvroTypeUtil {
     return Optional.empty();
   }
 
-  public static void enableDecodeCDCDataTypes() {
-    // Register custom logical types so Avro schema API enables the getLogicalType()
-    LogicalTypes.register(CQL_DECIMAL, schema -> new CqlLogicalTypes.CqlDecimalLogicalType());
-    LogicalTypes.register(CQL_DURATION, schema -> new CqlLogicalTypes.CqlDurationLogicalType());
-    LogicalTypes.register(CQL_VARINT, schema -> new CqlLogicalTypes.CqlVarintLogicalType());
+  public static void enableDecodeCDCDataTypes(boolean decodeCDCDataTypes) {
+    if (decodeCDCDataTypes) {
+      // Register custom logical types so Avro schema API enables the getLogicalType()
+      LogicalTypes.register(CQL_DECIMAL, schema -> new CqlLogicalTypes.CqlDecimalLogicalType());
+      LogicalTypes.register(CQL_DURATION, schema -> new CqlLogicalTypes.CqlDurationLogicalType());
+      LogicalTypes.register(CQL_VARINT, schema -> new CqlLogicalTypes.CqlVarintLogicalType());
 
-    // Register logical type converters
-    logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
-    logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
-    logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
+      // Register logical type converters
+      logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
+      logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
+      logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
+    } else {
+      // Deregister logical type converters
+      logicalTypeConverters.remove(CQL_DECIMAL);
+      logicalTypeConverters.remove(CQL_DURATION);
+      logicalTypeConverters.remove(CQL_VARINT);
+    }
 
-    decodeCDCDataTypes = true;
+    AvroTypeUtil.decodeCDCDataTypes = decodeCDCDataTypes;
   }
 }

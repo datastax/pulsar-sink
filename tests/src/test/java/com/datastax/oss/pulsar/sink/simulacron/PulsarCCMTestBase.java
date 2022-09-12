@@ -17,6 +17,7 @@ package com.datastax.oss.pulsar.sink.simulacron;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.Version;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import com.datastax.oss.dsbulk.tests.ccm.CCMExtension;
@@ -87,7 +88,7 @@ abstract class PulsarCCMTestBase {
                     + "l map<text,frozen<set<text>>>, "
                     + "m set<frozen<list<text>>>, "
                     + "n list<frozen<set<text>>>, "
-                    + "o decimal, "
+                    + (ccm.getCassandraVersion().getMajor() > 3 ? "o decimal, ": "") // Decimals are not supported in Cassandra 3.0
                     + "p duration, "
                     + "q uuid, "
                     + "r varint)")
