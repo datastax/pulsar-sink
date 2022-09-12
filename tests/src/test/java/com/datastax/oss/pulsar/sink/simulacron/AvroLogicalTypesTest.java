@@ -216,7 +216,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
 
       assertEquals(838, results.get(0).getInt("a"));
       assertEquals(decimal, results.get(0).getBigDecimal("o"));
-      assertEquals(duration, results.get(0).getCqlDuration("p"));
+      if (this.hasDurationType) {
+        assertEquals(duration, results.get(0).getCqlDuration("p"));
+      }
       assertEquals(uuid, results.get(0).getUuid("q"));
       assertEquals(bigInteger, results.get(0).getBigInteger("r"));
 
