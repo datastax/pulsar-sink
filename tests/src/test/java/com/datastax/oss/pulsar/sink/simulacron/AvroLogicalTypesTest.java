@@ -53,8 +53,6 @@ import org.awaitility.Awaitility;
 
 /** Use AVRO */
 public class AvroLogicalTypesTest extends PulsarCCMTestBase {
-  private static final String MAPPING =
-      "a=key, o=value.decimalField, p=value.durationField, q=value.uuidField, r=value.varintField";
 
   // DECIMAL
   private static final CqlDecimalLogicalType CQL_DECIMAL_LOGICAL_TYPE = new CqlDecimalLogicalType();
@@ -113,9 +111,13 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
           org.apache.avro.Schema.create(org.apache.avro.Schema.Type.BYTES));
 
   public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {
-    super(ccm, session, MAPPING);
+    super(ccm, session);
 
     this.connectorProperties.put("decodeCDCDataTypes", true);
+    // override mapping
+    final String mapping =
+        "a=key" + (ccm.getCassandraVersion().getMajor() > 3 ? ", o=value.decimalField": "") + ", p=value.durationField, q=value.uuidField, r=value.varintField";
+    connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
   @Override

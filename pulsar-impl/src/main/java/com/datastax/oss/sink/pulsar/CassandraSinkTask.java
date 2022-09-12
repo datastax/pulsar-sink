@@ -145,9 +145,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
       verbose = Boolean.parseBoolean(processorConfig.getOrDefault("verbose", "false"));
       decodeCDCDataTypes =
           Boolean.parseBoolean(processorConfig.getOrDefault("decodeCDCDataTypes", "false"));
-      if (decodeCDCDataTypes) {
-        AvroTypeUtil.enableDecodeCDCDataTypes();
-      }
+      AvroTypeUtil.enableDecodeCDCDataTypes(decodeCDCDataTypes);
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
 
