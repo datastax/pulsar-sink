@@ -110,13 +110,12 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
       CQL_VARINT_LOGICAL_TYPE.addToSchema(
           org.apache.avro.Schema.create(org.apache.avro.Schema.Type.BYTES));
 
-  public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {
-    super(ccm, session);
+  public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {super(ccm, session);
 
     this.connectorProperties.put("decodeCDCDataTypes", true);
     // override mapping
     final String mapping =
-        "a=key, o=value.decimalField" + (ccm.getVersion().getMajor() > 3 ? ", p=value.durationField": "") + ", q=value.uuidField, r=value.varintField";
+        "a=key, o=value.decimalField" + (this.hasDurationType ? ", p=value.durationField": "") + ", q=value.uuidField, r=value.varintField";
     connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
@@ -208,11 +207,11 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
           .pollDelay(1, TimeUnit.SECONDS)
           .until(
               () -> {
-                List<Row> results = session.execute("SELECT a, o, p, q, r FROM table1").all();
+                List<Row> results = session.execute("SELECT * FROM table1").all();
                 return results.size() > 1;
               });
 
-      List<Row> results = session.execute("SELECT a, o, p, q, r FROM table1").all();
+      List<Row> results = session.execute("SELECT * FROM table1").all();
       assertEquals(2, results.size());
 
       assertEquals(838, results.get(0).getInt("a"));
@@ -223,7 +222,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
 
       assertEquals(839, results.get(1).getInt("a"));
       assertNull(results.get(1).getBigDecimal("o"));
-      assertNull(results.get(1).getCqlDuration("p"));
+      if (this.hasDurationType) {
+        assertNull(results.get(1).getCqlDuration("p"));
+      }
       assertNull(results.get(1).getUuid("q"));
       assertNull(results.get(1).getBigInteger("r"));
 
