@@ -87,8 +87,8 @@ abstract class PulsarCCMTestBase {
                     + "l map<text,frozen<set<text>>>, "
                     + "m set<frozen<list<text>>>, "
                     + "n list<frozen<set<text>>>, "
-                    + (ccm.getVersion().getMajor() > 3 ? "o decimal, ": "") // Decimals are not supported in Cassandra 3.0
-                    + "p duration, "
+                    + "o decimal, "
+                    + (ccm.getVersion().getMajor() > 3 ? "p duration, ": "") // Duration is not supported in Cassandra 3.0
                     + "q uuid, "
                     + "r varint)")
             .build());
