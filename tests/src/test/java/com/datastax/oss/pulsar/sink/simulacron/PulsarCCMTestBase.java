@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.datastax.oss.dsbulk.tests.driver.VersionUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +47,7 @@ abstract class PulsarCCMTestBase {
   protected final Map<String, Object> connectorProperties;
   protected final CqlSession session;
   protected final String keyspaceName;
+  protected final boolean hasDurationType;
 
   private static final String DEFAULT_MAPPING =
       "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdt, h=value.setField, "
@@ -63,7 +66,8 @@ abstract class PulsarCCMTestBase {
     Testcontainers.exposeHostPorts(port);
 
     keyspaceName = session.getKeyspace().orElse(CqlIdentifier.fromInternal("unknown")).asInternal();
-
+    // Duration is not supported in Cassandra 3.0
+    this.hasDurationType = (ccm.getClusterType() == CCMCluster.Type.DSE || VersionUtils.isWithinRange(ccm.getCassandraVersion(), Version.parse("4.0.0"), null));
     session.execute(
         SimpleStatement.builder(
                 "CREATE TYPE udt (intf int, stringf text, listf frozen<list<text>>, setf frozen<set<int>>, mapf frozen<map<text, double>>)")
@@ -88,7 +92,7 @@ abstract class PulsarCCMTestBase {
                     + "m set<frozen<list<text>>>, "
                     + "n list<frozen<set<text>>>, "
                     + "o decimal, "
-                    + (ccm.getVersion().getMajor() > 3 ? "p duration, ": "") // Duration is not supported in Cassandra 3.0
+                    + (this.hasDurationType ? "p duration, ": "")
                     + "q uuid, "
                     + "r varint)")
             .build());
