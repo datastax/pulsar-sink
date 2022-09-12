@@ -69,7 +69,6 @@ abstract class PulsarCCMTestBase {
                 "CREATE TYPE udt (intf int, stringf text, listf frozen<list<text>>, setf frozen<set<int>>, mapf frozen<map<text, double>>)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
-
     session.execute(
         SimpleStatement.builder(
                 "CREATE TABLE IF NOT EXISTS table1 ("
@@ -88,7 +87,7 @@ abstract class PulsarCCMTestBase {
                     + "l map<text,frozen<set<text>>>, "
                     + "m set<frozen<list<text>>>, "
                     + "n list<frozen<set<text>>>, "
-                    + (ccm.getCassandraVersion().getMajor() > 3 ? "o decimal, ": "") // Decimals are not supported in Cassandra 3.0
+                tests/src/test/java/com/datastax/oss/pulsar/sink/simulacron/PulsarCCMTestBase.java                    + (ccm.getVersion().getMajor() > 3 ? "o decimal, ": "") // Decimals are not supported in Cassandra 3.0
                     + "p duration, "
                     + "q uuid, "
                     + "r varint)")

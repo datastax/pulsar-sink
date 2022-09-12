@@ -116,7 +116,7 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     this.connectorProperties.put("decodeCDCDataTypes", true);
     // override mapping
     final String mapping =
-        "a=key" + (ccm.getCassandraVersion().getMajor() > 3 ? ", o=value.decimalField": "") + ", p=value.durationField, q=value.uuidField, r=value.varintField";
+        "a=key" + (ccm.getVersion().getMajor() > 3 ? ", o=value.decimalField": "") + ", p=value.durationField, q=value.uuidField, r=value.varintField";
     connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
