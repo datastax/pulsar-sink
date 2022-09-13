@@ -55,6 +55,9 @@ public class CassandraSinkTask<T> implements Sink<T> {
   private ScheduledExecutorService flushExecutor;
   private boolean verbose = false;
 
+  /** Enables decoding logical types coming from CSC */
+  private boolean decodeCDCDataTypes = false;
+
   public CassandraSinkTask() {
     flushExecutor = Executors.newScheduledThreadPool(1);
     processor =
@@ -140,6 +143,9 @@ public class CassandraSinkTask<T> implements Sink<T> {
           Integer.parseInt(processorConfig.getOrDefault("batchFlushTimeoutMs", "1000"));
       batchSize = Integer.parseInt(processorConfig.getOrDefault("batchSize", "32"));
       verbose = Boolean.parseBoolean(processorConfig.getOrDefault("verbose", "false"));
+      decodeCDCDataTypes =
+          Boolean.parseBoolean(processorConfig.getOrDefault("decodeCDCDataTypes", "false"));
+      AvroTypeUtil.enableDecodeCDCDataTypes(decodeCDCDataTypes);
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
 
