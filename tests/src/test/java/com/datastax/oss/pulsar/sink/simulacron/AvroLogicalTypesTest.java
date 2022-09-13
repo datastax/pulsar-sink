@@ -110,12 +110,15 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
       CQL_VARINT_LOGICAL_TYPE.addToSchema(
           org.apache.avro.Schema.create(org.apache.avro.Schema.Type.BYTES));
 
-  public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {super(ccm, session);
+  public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {
+    super(ccm, session);
 
     this.connectorProperties.put("decodeCDCDataTypes", true);
     // override mapping
     final String mapping =
-        "a=key, o=value.decimalField" + (this.hasDurationType ? ", p=value.durationField": "") + ", q=value.uuidField, r=value.varintField";
+        "a=key, o=value.decimalField"
+            + (this.hasDurationType ? ", p=value.durationField" : "")
+            + ", q=value.uuidField, r=value.varintField";
     connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
