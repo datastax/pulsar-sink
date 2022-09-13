@@ -90,7 +90,9 @@ public class PulsarStruct implements AbstractStruct {
     }
 
     Object field = record.getField(fieldName);
-    if (AvroTypeUtil.shouldWrapAvroType(this.record, field)) {
+    if (AvroTypeUtil.shouldHandleCassandraCDCLogicalType(record, fieldName)) {
+      field = AvroTypeUtil.handleCassandraCDCLogicalType(record, fieldName, field);
+    } else if (AvroTypeUtil.shouldWrapAvroType(record, field)) {
       field = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(field));
     }
 
