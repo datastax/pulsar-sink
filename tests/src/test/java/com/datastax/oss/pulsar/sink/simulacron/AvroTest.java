@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.data.DefaultUdtValue;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
@@ -38,7 +39,8 @@ import org.awaitility.Awaitility;
 public class AvroTest extends PulsarCCMTestBase {
   private static final String MAPPING =
       "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdtFixedType, h=value.setField, "
-          + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets";
+          + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets, "
+          + "s=value.listOfUdt";
   private final Map<String, String> map = ImmutableMap.of("k1", "v1", "k2", "v2");
   private final List<String> list = ImmutableList.of("l1", "l2");
   private final Set<String> set = ImmutableSet.of("s1", "s2");
@@ -48,7 +50,6 @@ public class AvroTest extends PulsarCCMTestBase {
   private final Map<String, Set<String>> mapOfSets = ImmutableMap.of("k1", set, "k2", set);
   private final Set<List<String>> setOfLists = ImmutableSet.of(list);
   private final List<Set<String>> listOfSets = ImmutableList.of(set, set);
-
   private final MyUdt pojoUdt =
       new MyUdt(
           99,
@@ -56,6 +57,8 @@ public class AvroTest extends PulsarCCMTestBase {
           ImmutableList.of("l1", "l2"),
           ImmutableSet.of(3, 4),
           ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
+  private final List<MyUdt> listOfUdt = ImmutableList.of(pojoUdt, pojoUdt);
+
   /**
    * AVRO schema with Pulsar doesn't work well with mixed value types on the map - the values will
    * be of "org.apache.avro.generic.GenericData$Record" with the following limitations: 1. Using
@@ -104,7 +107,8 @@ public class AvroTest extends PulsarCCMTestBase {
                   setOfLists,
                   pojoUdt,
                   null,
-                  mapUdt))
+                  mapUdt,
+                  listOfUdt))
           .send();
     }
     try {
@@ -164,6 +168,18 @@ public class AvroTest extends PulsarCCMTestBase {
         value = (DefaultUdtValue) row.getUdtValue("g");
         assertEquals(Integer.valueOf(mapUdt.get("intf").toString()), value.getInt("intf"));
         assertEquals(mapUdt.get("stringf"), value.getString("stringf"));
+
+        GenericType<List<DefaultUdtValue>> listOfUdtType =
+            new GenericType<List<DefaultUdtValue>>() {};
+        List<DefaultUdtValue> listOfUdt = row.get("s", listOfUdtType);
+        assertEquals(listOfUdt.size(), 2);
+        for (UdtValue udt : listOfUdt) {
+          assertEquals(pojoUdt.getIntf(), udt.getInt("intf"));
+          assertEquals(pojoUdt.getStringf(), udt.getString("stringf"));
+          assertEquals(pojoUdt.getListf(), udt.get("listf", udtListType));
+          assertEquals(pojoUdt.getSetf(), udt.get("setf", udtSetType));
+          assertEquals(pojoUdt.getMapf(), udt.get("mapf", udtMapType));
+        }
       }
       assertEquals(1, results.size());
     } finally {
