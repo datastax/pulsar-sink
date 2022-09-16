@@ -53,6 +53,15 @@ public final class AvroTypeUtil {
         .orElse(false);
   }
 
+  public static boolean shouldHandleCassandraCDCLogicalType(Schema schema) {
+    if (!decodeCDCDataTypes) {
+      return false;
+    }
+    return getLogicalType(schema)
+        .map(logicalType -> logicalTypeConverters.containsKey(logicalType.getName()))
+        .orElse(false);
+  }
+
   /**
    * Handles logical types that originates from an upstream C* CDC only.
    *
@@ -88,6 +97,37 @@ public final class AvroTypeUtil {
                           (IndexedRecord) ((GenericRecord) fieldValue).getNativeObject(),
                           null,
                           null)
+                      .toString() // this will utilize the StringToDuration & StringToBigDecimal
+                  // ConvertingCodecs
+                  : fieldValue;
+            })
+        .orElseThrow(
+            () ->
+                new UnsupportedOperationException("cannot handle logical type for " + fieldValue));
+  }
+
+  public static Object handleCassandraCDCLogicalType(Object fieldValue, Schema schema) {
+    if (!decodeCDCDataTypes) {
+      throw new IllegalStateException(
+          "cannot handle CDC logical types because the decodeCDCDataTypes config is false");
+    }
+    if (fieldValue == null) {
+      return null; // logical types are optional
+    }
+    return getLogicalType(schema)
+        .map(
+            logicalType -> {
+              if (isVarint(logicalType)) {
+                return logicalTypeConverters
+                    .get(CQL_VARINT)
+                    .fromBytes((ByteBuffer) fieldValue, null, null)
+                    .toString();
+              }
+              return fieldValue instanceof org.apache.avro.generic.GenericRecord
+                      && logicalTypeConverters.containsKey(logicalType.getName())
+                  ? logicalTypeConverters
+                      .get(logicalType.getName())
+                      .fromRecord((IndexedRecord) fieldValue, null, null)
                       .toString() // this will utilize the StringToDuration & StringToBigDecimal
                   // ConvertingCodecs
                   : fieldValue;
