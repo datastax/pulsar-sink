@@ -135,14 +135,18 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
 
     List<org.apache.avro.Schema.Field> udtFields = new ArrayList<>();
     udtFields.add(createDecimalField("decimalf"));
-    udtFields.add(createDurationsField("durationf"));
+    if (hasDurationType) {
+      udtFields.add(createDurationsField("durationf"));
+    }
     udtFields.add(createUUIDField("uuidf"));
     udtFields.add(createVarintField("varintf"));
     org.apache.avro.Schema udtSchema =
         org.apache.avro.Schema.createRecord("udt", "", "ns1", false, udtFields);
     org.apache.avro.generic.GenericRecord udtRecord = new GenericData.Record(udtSchema);
     udtRecord.put("decimalf", createDecimalRecord(decimal));
-    udtRecord.put("durationf", createDurationRecord(duration));
+    if (hasDurationType) {
+      udtRecord.put("durationf", createDurationRecord(duration));
+    }
     udtRecord.put("uuidf", uuid.toString());
     udtRecord.put("varintf", ByteBuffer.wrap(bigInteger.toByteArray()));
 
