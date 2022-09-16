@@ -50,7 +50,7 @@ abstract class PulsarCCMTestBase {
 
   private static final String DEFAULT_MAPPING =
       "a=key, b=value.field1, d=value.mapField, e=value.listField, f=value.pojoUdt, g=value.mapUdt, h=value.setField, "
-          + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets";
+          + "i=value.listOfMaps, j=value.setOfMaps, k=value.mapOfLists, l=value.mapOfSets, m=value.setOfLists, n=value.listOfSets, s=value.listOfUdt";
 
   @SuppressWarnings("unused")
   PulsarCCMTestBase(CCMCluster ccm, CqlSession session) throws Exception {
@@ -74,6 +74,14 @@ abstract class PulsarCCMTestBase {
                 "CREATE TYPE udt (intf int, stringf text, listf frozen<list<text>>, setf frozen<set<int>>, mapf frozen<map<text, double>>)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
+    // create UDT with logical types
+    session.execute(
+        SimpleStatement.builder(
+                "CREATE TYPE udtLogicalTypes (decimalf decimal"
+                    + (this.hasDurationType ? ", durationf duration" : "")
+                    + ", uuidf uuid, varintf varint)")
+            .setTimeout(Duration.ofSeconds(10))
+            .build());
     session.execute(
         SimpleStatement.builder(
                 "CREATE TABLE IF NOT EXISTS table1 ("
@@ -95,7 +103,10 @@ abstract class PulsarCCMTestBase {
                     + "o decimal, "
                     + (this.hasDurationType ? "p duration, " : "")
                     + "q uuid, "
-                    + "r varint)")
+                    + "r varint,"
+                    + "s list<frozen<udt>>,"
+                    + "t udtLogicalTypes,"
+                    + "u list<frozen<udtLogicalTypes>>)")
             .build());
 
     connectorProperties = new HashMap<>();
@@ -218,8 +229,8 @@ abstract class PulsarCCMTestBase {
     private Set<List<String>> setOfLists;
     private MyUdt pojoUdt;
     private Map<String, Object> mapUdt;
-
     private Map<String, String> mapUdtFixedType;
+    private List<MyUdt> listOfUdt;
 
     public MyBean(String field1) {
       this.field1 = field1;
@@ -243,7 +254,8 @@ abstract class PulsarCCMTestBase {
         Set<List<String>> setOfLists,
         MyUdt pojoUdt,
         Map<String, Object> mapUdt,
-        Map<String, String> mapUdtFixedType) {
+        Map<String, String> mapUdtFixedType,
+        List<MyUdt> listOfUdt) {
       this(stringField, Instant.now().toEpochMilli());
       this.mapField = mapField;
       this.listField = listField;
@@ -257,6 +269,7 @@ abstract class PulsarCCMTestBase {
       this.pojoUdt = pojoUdt;
       this.mapUdt = mapUdt;
       this.mapUdtFixedType = mapUdtFixedType;
+      this.listOfUdt = listOfUdt;
     }
 
     public String getField1() {
@@ -369,6 +382,14 @@ abstract class PulsarCCMTestBase {
 
     public void setMapUdtFixedType(Map<String, String> mapUdtFixedType) {
       this.mapUdtFixedType = mapUdtFixedType;
+    }
+
+    public List<MyUdt> getListOfUdt() {
+      return listOfUdt;
+    }
+
+    public void setListOfUdt(List<MyUdt> listOfUdt) {
+      this.listOfUdt = listOfUdt;
     }
   }
 }

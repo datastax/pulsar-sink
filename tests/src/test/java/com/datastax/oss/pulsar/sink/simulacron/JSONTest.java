@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.internal.core.data.DefaultUdtValue;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
@@ -53,6 +54,7 @@ public class JSONTest extends PulsarCCMTestBase {
           ImmutableList.of("l1", "l2"),
           ImmutableSet.of(3, 4),
           ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
+  private final List<MyUdt> listOfUdt = ImmutableList.of(pojoUdt, pojoUdt);
   private final Map<String, Object> mapUdt =
       ImmutableMap.of(
           "intf",
@@ -97,7 +99,8 @@ public class JSONTest extends PulsarCCMTestBase {
                   setOfLists,
                   pojoUdt,
                   mapUdt,
-                  null))
+                  null,
+                  listOfUdt))
           .send();
     }
     try {
@@ -162,6 +165,18 @@ public class JSONTest extends PulsarCCMTestBase {
         assertEquals(mapUdt.get("listf"), value.get("listf", udtListType));
         assertEquals(mapUdt.get("setf"), value.get("setf", udtSetType));
         assertEquals(mapUdt.get("mapf"), value.get("mapf", udtMapType));
+
+        GenericType<List<DefaultUdtValue>> listOfUdtType =
+            new GenericType<List<DefaultUdtValue>>() {};
+        List<DefaultUdtValue> listOfUdt = row.get("s", listOfUdtType);
+        assertEquals(listOfUdt.size(), 2);
+        for (UdtValue udt : listOfUdt) {
+          assertEquals(pojoUdt.getIntf(), udt.getInt("intf"));
+          assertEquals(pojoUdt.getStringf(), udt.getString("stringf"));
+          assertEquals(pojoUdt.getListf(), udt.get("listf", udtListType));
+          assertEquals(pojoUdt.getSetf(), udt.get("setf", udtSetType));
+          assertEquals(pojoUdt.getMapf(), udt.get("mapf", udtMapType));
+        }
       }
       assertEquals(1, results.size());
     } finally {

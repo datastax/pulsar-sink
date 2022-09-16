@@ -17,10 +17,14 @@ package com.datastax.oss.pulsar.sink.simulacron;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
+import com.datastax.oss.driver.api.core.data.UdtValue;
+import com.datastax.oss.driver.api.core.type.reflect.GenericType;
+import com.datastax.oss.driver.internal.core.data.DefaultUdtValue;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -118,71 +122,53 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     final String mapping =
         "a=key, o=value.decimalField"
             + (this.hasDurationType ? ", p=value.durationField" : "")
-            + ", q=value.uuidField, r=value.varintField";
+            + ", q=value.uuidField, r=value.varintField, t=value.udtField, u=value.udtListField";
     connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
   @Override
   protected void performTest(final PulsarSinkTester pulsarSink) throws PulsarClientException {
+    BigDecimal decimal = new BigDecimal(314.16);
+    CqlDuration duration = CqlDuration.newInstance(1, 2, 320688000000000L);
+    UUID uuid = UUID.randomUUID();
+    BigInteger bigInteger = new BigInteger("314");
+
+    List<org.apache.avro.Schema.Field> udtFields = new ArrayList<>();
+    udtFields.add(createDecimalField("decimalf"));
+    udtFields.add(createDurationsField("durationf"));
+    udtFields.add(createUUIDField("uuidf"));
+    udtFields.add(createVarintField("varintf"));
+    org.apache.avro.Schema udtSchema =
+        org.apache.avro.Schema.createRecord("udt", "", "ns1", false, udtFields);
+    org.apache.avro.generic.GenericRecord udtRecord = new GenericData.Record(udtSchema);
+    udtRecord.put("decimalf", createDecimalRecord(decimal));
+    udtRecord.put("durationf", createDurationRecord(duration));
+    udtRecord.put("uuidf", uuid.toString());
+    udtRecord.put("varintf", ByteBuffer.wrap(bigInteger.toByteArray()));
+
+    org.apache.avro.Schema udtListSchema = org.apache.avro.Schema.createArray(udtSchema);
+    org.apache.avro.generic.GenericArray udtList = new GenericData.Array<>(2, udtListSchema);
+    udtList.add(udtRecord);
+    udtList.add(udtRecord);
+
     List<org.apache.avro.Schema.Field> fields = new ArrayList<>();
 
-    org.apache.avro.Schema.Field decimalSchema =
-        new org.apache.avro.Schema.Field("decimalField", decimalType);
-    org.apache.avro.Schema.Field optionalDecimalSchema =
-        new org.apache.avro.Schema.Field(
-            "decimalField",
-            SchemaBuilder.unionOf().nullType().and().type(decimalSchema.schema()).endUnion(),
-            null,
-            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
-    fields.add(optionalDecimalSchema);
-    org.apache.avro.Schema.Field durationSchema =
-        new org.apache.avro.Schema.Field("durationField", durationType);
-    org.apache.avro.Schema.Field optionalDurationsSchema =
-        new org.apache.avro.Schema.Field(
-            "durationField",
-            SchemaBuilder.unionOf().nullType().and().type(durationSchema.schema()).endUnion(),
-            null,
-            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
-    fields.add(optionalDurationsSchema);
-    org.apache.avro.Schema.Field uuidSchema =
-        new org.apache.avro.Schema.Field("uuidField", uuidType);
-    org.apache.avro.Schema.Field optionalUUIDSchema =
-        new org.apache.avro.Schema.Field(
-            "uuidField",
-            SchemaBuilder.unionOf().nullType().and().type(uuidSchema.schema()).endUnion(),
-            null,
-            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
-    fields.add(optionalUUIDSchema);
-    org.apache.avro.Schema.Field varintSchema =
-        new org.apache.avro.Schema.Field("varintField", varintType);
-    org.apache.avro.Schema.Field optionalVarintSchema =
-        new org.apache.avro.Schema.Field(
-            "varintField",
-            SchemaBuilder.unionOf().nullType().and().type(varintSchema.schema()).endUnion(),
-            null,
-            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
-    fields.add(optionalVarintSchema);
-
-    org.apache.avro.generic.GenericRecord decimalRecord = new GenericData.Record(decimalType);
-    BigDecimal decimal = new BigDecimal(314.16);
-    decimalRecord.put(CQL_DECIMAL_BIGINT, ByteBuffer.wrap(decimal.unscaledValue().toByteArray()));
-    decimalRecord.put(CQL_DECIMAL_SCALE, decimal.scale());
-
-    CqlDuration duration = CqlDuration.newInstance(1, 2, 320688000000000L);
-    org.apache.avro.generic.GenericRecord durationRecord = new GenericData.Record(durationType);
-    durationRecord.put(CQL_DURATION_MONTHS, duration.getMonths());
-    durationRecord.put(CQL_DURATION_DAYS, duration.getDays());
-    durationRecord.put(CQL_DURATION_NANOSECONDS, duration.getNanoseconds());
-
+    fields.add(createDecimalField("decimalField"));
+    fields.add(createDurationsField("durationField"));
+    fields.add(createUUIDField("uuidField"));
+    fields.add(createVarintField("varintField"));
+    fields.add(createUdtField(udtSchema));
+    fields.add(createUdtListField(udtListSchema));
     org.apache.avro.Schema avroSchema =
         org.apache.avro.Schema.createRecord("logical_types", "", "ns1", false, fields);
     org.apache.avro.generic.GenericRecord logicalTypesRecord = new GenericData.Record(avroSchema);
-    logicalTypesRecord.put("decimalField", decimalRecord);
-    logicalTypesRecord.put("durationField", durationRecord);
-    UUID uuid = UUID.randomUUID();
+    logicalTypesRecord.put("decimalField", createDecimalRecord(decimal));
+    logicalTypesRecord.put("durationField", createDurationRecord(duration));
     logicalTypesRecord.put("uuidField", uuid.toString());
-    BigInteger bigInteger = new BigInteger("314");
     logicalTypesRecord.put("varintField", ByteBuffer.wrap(bigInteger.toByteArray()));
+    logicalTypesRecord.put("udtField", udtRecord);
+    logicalTypesRecord.put("udtListField", udtList);
+
     Schema pulsarSchema = new NativeSchemaWrapper(avroSchema, SchemaType.AVRO);
     org.apache.avro.generic.GenericRecord nullLogicalTypesRecord =
         new GenericData.Record(avroSchema);
@@ -224,7 +210,26 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
       }
       assertEquals(uuid, results.get(0).getUuid("q"));
       assertEquals(bigInteger, results.get(0).getBigInteger("r"));
+      UdtValue udt = results.get(0).getUdtValue("t");
+      assertEquals(decimal, udt.getBigDecimal("decimalf"));
+      if (this.hasDurationType) {
+        assertEquals(duration, udt.getCqlDuration("durationf"));
+      }
+      assertEquals(uuid, udt.getUuid("uuidf"));
+      assertEquals(bigInteger, udt.getBigInteger("varintf"));
 
+      GenericType<List<DefaultUdtValue>> listOfUdtType =
+          new GenericType<List<DefaultUdtValue>>() {};
+      List<DefaultUdtValue> listOfUdt = results.get(0).get("u", listOfUdtType);
+      assertEquals(listOfUdt.size(), 2);
+      for (UdtValue value : listOfUdt) {
+        assertEquals(decimal, value.getBigDecimal("decimalf"));
+        if (this.hasDurationType) {
+          assertEquals(duration, value.getCqlDuration("durationf"));
+        }
+        assertEquals(uuid, value.getUuid("uuidf"));
+        assertEquals(bigInteger, value.getBigInteger("varintf"));
+      }
       assertEquals(839, results.get(1).getInt("a"));
       assertNull(results.get(1).getBigDecimal("o"));
       if (this.hasDurationType) {
@@ -232,11 +237,102 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
       }
       assertNull(results.get(1).getUuid("q"));
       assertNull(results.get(1).getBigInteger("r"));
+      assertNull(results.get(1).getUdtValue("t"));
+      assertTrue(results.get(1).get("u", listOfUdtType).isEmpty());
 
     } finally {
       // always print Sink logs
       pulsarSink.dumpLogs();
     }
+  }
+
+  private org.apache.avro.Schema.Field createUdtListField(org.apache.avro.Schema udtListSchema) {
+    org.apache.avro.Schema.Field udtListField =
+        new org.apache.avro.Schema.Field("udtListField", udtListSchema);
+    org.apache.avro.Schema.Field optionalUdtField =
+        new org.apache.avro.Schema.Field(
+            "udtListField",
+            SchemaBuilder.unionOf().nullType().and().type(udtListField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalUdtField;
+  }
+
+  private org.apache.avro.Schema.Field createUdtField(org.apache.avro.Schema udtSchema) {
+    org.apache.avro.Schema.Field udtField = new org.apache.avro.Schema.Field("udtField", udtSchema);
+    org.apache.avro.Schema.Field optionalUdtField =
+        new org.apache.avro.Schema.Field(
+            "udtField",
+            SchemaBuilder.unionOf().nullType().and().type(udtField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalUdtField;
+  }
+
+  private org.apache.avro.Schema.Field createVarintField(String name) {
+    org.apache.avro.Schema.Field varintField = new org.apache.avro.Schema.Field(name, varintType);
+    org.apache.avro.Schema.Field optionalVarintField =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(varintField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalVarintField;
+  }
+
+  private org.apache.avro.Schema.Field createUUIDField(String name) {
+    org.apache.avro.Schema.Field uuidField = new org.apache.avro.Schema.Field(name, uuidType);
+    org.apache.avro.Schema.Field optionalUUIDField =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(uuidField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalUUIDField;
+  }
+
+  private org.apache.avro.Schema.Field createDecimalField(String name) {
+    org.apache.avro.Schema.Field decimalField = new org.apache.avro.Schema.Field(name, decimalType);
+    org.apache.avro.Schema.Field optionalDecimalField =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(decimalField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalDecimalField;
+  }
+
+  private org.apache.avro.Schema.Field createDurationsField(String name) {
+    org.apache.avro.Schema.Field durationField =
+        new org.apache.avro.Schema.Field(name, durationType);
+    org.apache.avro.Schema.Field optionalDurationsFiled =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(durationField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalDurationsFiled;
+  }
+
+  private Object createDurationRecord(CqlDuration duration) {
+    org.apache.avro.generic.GenericRecord durationRecord = new GenericData.Record(durationType);
+    durationRecord.put(CQL_DURATION_MONTHS, duration.getMonths());
+    durationRecord.put(CQL_DURATION_DAYS, duration.getDays());
+    durationRecord.put(CQL_DURATION_NANOSECONDS, duration.getNanoseconds());
+    return durationRecord;
+  }
+
+  private GenericRecord createDecimalRecord(BigDecimal decimal) {
+    org.apache.avro.generic.GenericRecord decimalRecord = new GenericData.Record(decimalType);
+    decimalRecord.put(CQL_DECIMAL_BIGINT, ByteBuffer.wrap(decimal.unscaledValue().toByteArray()));
+    decimalRecord.put(CQL_DECIMAL_SCALE, decimal.scale());
+    return decimalRecord;
   }
 
   private static class CqlDecimalLogicalType extends LogicalType {
