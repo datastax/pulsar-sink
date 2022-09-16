@@ -19,7 +19,6 @@ import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractStruct;
 import com.datastax.oss.common.sink.util.SinkUtil;
 import java.util.Optional;
-import org.apache.avro.util.internal.JacksonUtils;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
@@ -93,7 +92,12 @@ public class PulsarStruct implements AbstractStruct {
     if (AvroTypeUtil.shouldHandleCassandraCDCLogicalType(record, fieldName)) {
       field = AvroTypeUtil.handleCassandraCDCLogicalType(record, fieldName, field);
     } else if (AvroTypeUtil.shouldWrapAvroType(record, field)) {
-      field = new AvroContainerTypeRecord(JacksonUtils.toJsonNode(field));
+      org.apache.avro.Schema schema =
+          ((org.apache.avro.generic.GenericRecord) record.getNativeObject())
+              .getSchema()
+              .getField(fieldName)
+              .schema();
+      field = new AvroContainerTypeRecord(JsonConverter.toJson(schema, field));
     }
 
     return wrap(this, fieldName, field, schemaRegistry);
