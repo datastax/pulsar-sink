@@ -90,8 +90,8 @@ abstract class PulsarCCMTestBase {
                     + "c TIMESTAMP, "
                     + "d map<text,text>, "
                     + "e list<text>, "
-                    + "f FROZEN<udt>, "
-                    + "g FROZEN<udt>, " // Non-frozen User-Defined types are not supported in
+                    + "f frozen<udt>, "
+                    + "g frozen<udt>, " // Non-frozen User-Defined types are not supported in
                     // Cassandra 3.0
                     + "h set<text>, "
                     + "i list<frozen<map<text,text>>>, "
@@ -105,7 +105,7 @@ abstract class PulsarCCMTestBase {
                     + "q uuid, "
                     + "r varint,"
                     + "s list<frozen<udt>>,"
-                    + "t udtLogicalTypes,"
+                    + "t frozen<udtLogicalTypes>,"
                     + "u list<frozen<udtLogicalTypes>>)")
             .build());
 
