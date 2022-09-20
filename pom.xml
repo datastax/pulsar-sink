@@ -714,7 +714,7 @@ limitations under the License.]]></inlineHeader>
     <repository>
       <id>datastax-releases-local</id>
       <name>DataStax Local Releases</name>
-      <url>https://repo.sjc.dsinternal.org/artifactory/datastax-releases-local/</url>
+      <url>https://repo.aws.dsinternal.org/artifactory/datastax-releases-local/</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -725,7 +725,7 @@ limitations under the License.]]></inlineHeader>
     <repository>
       <id>datastax-snapshots-local</id>
       <name>DataStax Local Snapshots</name>
-      <url>https://repo.sjc.dsinternal.org/artifactory/datastax-snapshots-local/</url>
+      <url>https://repo.aws.dsinternal.org/artifactory/datastax-snapshots-local/</url>
       <releases>
         <enabled>false</enabled>
       </releases>
@@ -738,12 +738,12 @@ limitations under the License.]]></inlineHeader>
     <repository>
       <id>datastax-releases-local</id>
       <name>DataStax Local Releases</name>
-      <url>https://repo.sjc.dsinternal.org/artifactory/datastax-releases-local/</url>
+      <url>https://repo.aws.dsinternal.org/artifactory/datastax-releases-local/</url>
     </repository>
     <snapshotRepository>
       <id>datastax-snapshots-local</id>
       <name>DataStax Local Snapshots</name>
-      <url>https://repo.sjc.dsinternal.org/artifactory/datastax-snapshots-local/</url>
+      <url>https://repo.aws.dsinternal.org/artifactory/datastax-snapshots-local/</url>
     </snapshotRepository>
   </distributionManagement>
   <licenses>
