@@ -15,10 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         pulsar:
-          - "datastax/lunastreaming:2.8.3_1.0.14"
-          - "datastax/lunastreaming:2.10_1.0"
-          - "apachepulsar/pulsar:2.8.3"
-          - "apachepulsar/pulsar:2.10.1"
+          - "datastax/lunastreaming:2.10_2.3"
+          - "apachepulsar/pulsar:2.10.2"
         cassandra:
           - cassandra_version: 3.0.27
             ccm_version: 3.0.27
