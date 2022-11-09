@@ -67,7 +67,7 @@
     <lz4.version>1.6.0</lz4.version>
     <snappy.version>1.1.7.2</snappy.version>
     <jackson.version>2.12.6</jackson.version>
-    <jackson-databind.version>2.12.6.1</jackson-databind.version>
+    <jackson-databind.version>2.12.7.1</jackson-databind.version>
     <logback.version>1.2.9</logback.version>
     <jnr.version>3.1.15</jnr.version>
     <avro.version>1.10.2</avro.version>
