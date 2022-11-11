@@ -29,7 +29,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,7 +50,7 @@ public class CassandraSinkTask<T> implements Sink<T> {
   protected AbstractSinkTask processor;
   private String version;
   private final LocalSchemaRegistry schemaRegistry = new LocalSchemaRegistry();
-  private List<Record<T>> incomingList;
+  private BlockingQueue<Record<T>> incomingQueue;
 
   private final AtomicBoolean isFlushing;
   private int batchSize = 3000;
@@ -127,8 +129,13 @@ public class CassandraSinkTask<T> implements Sink<T> {
             return APPLICATION_NAME;
           }
         };
-    incomingList = new ArrayList<>();
     isFlushing = new AtomicBoolean(false);
+  }
+
+  @VisibleForTesting
+  public CassandraSinkTask(BlockingQueue<Record<T>> incomingQueue) {
+    this();
+    this.incomingQueue = incomingQueue;
   }
 
   @Override
@@ -148,7 +155,10 @@ public class CassandraSinkTask<T> implements Sink<T> {
       AvroTypeUtil.enableDecodeCDCDataTypes(decodeCDCDataTypes);
       processor.start(processorConfig);
       log.debug("started {}", getClass().getName(), processorConfig);
-
+      final int incomingQueueCapacity =
+          batchSize
+              * 2; // accept twice batchSize to keep incomingList preloaded for the next iteration
+      incomingQueue = new LinkedBlockingDeque<>(incomingQueueCapacity);
       flushExecutor.scheduleAtFixedRate(
           this::flush, batchFlushTimeoutMs, batchFlushTimeoutMs, TimeUnit.MILLISECONDS);
     } catch (Throwable ex) {
@@ -189,28 +199,22 @@ public class CassandraSinkTask<T> implements Sink<T> {
         log.info("raw {}", rawvalue);
       }
     }
-    int number;
-    synchronized (this) {
-      incomingList.add(record);
-      number = incomingList.size();
-    }
-    if (number == batchSize) {
+
+    incomingQueue.put(record); // blocking call to slow down the topic consumer
+    if (incomingQueue.size() >= batchSize) {
       flushExecutor.submit(this::flush);
     }
   }
 
   protected void flush() {
-    final List<Record<T>> swapList;
-    synchronized (this) {
-      if (!incomingList.isEmpty() && isFlushing.compareAndSet(false, true)) {
-        swapList = incomingList;
-        incomingList = new ArrayList<>();
-      } else {
-        return;
-      }
+    if (incomingQueue.isEmpty() || !isFlushing.compareAndSet(false, true)) {
+      return;
     }
+    final List<Record<T>> swapList = new ArrayList<>();
+    incomingQueue.drainTo(swapList, batchSize);
+
     if (log.isDebugEnabled()) {
-      log.debug("Starting flush, queue size: {}", incomingList.size());
+      log.debug("Starting flush, queue size: {}", swapList.size());
     }
     List<AbstractSinkRecord> toProcess = new ArrayList<>(swapList.size());
     for (Record<T> record : swapList) {
@@ -281,8 +285,8 @@ public class CassandraSinkTask<T> implements Sink<T> {
   }
 
   @VisibleForTesting
-  public List<Record<T>> getIncomingList() {
-    return incomingList;
+  public BlockingQueue<Record<T>> getIncomingQueue() {
+    return incomingQueue;
   }
 
   @VisibleForTesting

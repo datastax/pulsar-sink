@@ -17,6 +17,8 @@ package com.datastax.oss.sink.pulsar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -32,8 +34,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.apache.pulsar.client.api.Schema;
@@ -54,7 +60,7 @@ class CassandraSinkTaskBatchTest {
   @BeforeEach
   void setUp() {
     sinkTask =
-        new CassandraSinkTask() {
+        new CassandraSinkTask(new ArrayBlockingQueue<>(10)) {
           @Override
           protected void flush() {
             try {
@@ -108,16 +114,16 @@ class CassandraSinkTaskBatchTest {
     // we are not calling sinkTask#open, so there is no automatic flush
     // flush happens only when batch size is reached
     {
-      CompletableFuture<List<?>> flushResult = new CompletableFuture<>();
-      CompletableFuture<List<?>> afterFlushResult = new CompletableFuture<>();
+      CompletableFuture<BlockingQueue<?>> flushResult = new CompletableFuture<>();
+      CompletableFuture<BlockingQueue<?>> afterFlushResult = new CompletableFuture<>();
       beforeFlush.set(
           () -> {
             // flush always happens in a separate thread
-            flushResult.complete(sinkTask.getIncomingList());
+            flushResult.complete(snapshotIncomingQueue());
           });
       afterFlush.set(
           () -> {
-            afterFlushResult.complete(sinkTask.getIncomingList());
+            afterFlushResult.complete(snapshotIncomingQueue());
           });
       sinkTask.setBatchSize(1);
       sinkTask.write(record);
@@ -131,18 +137,18 @@ class CassandraSinkTaskBatchTest {
     sinkTask.write(record);
     sinkTask.write(record);
     sinkTask.write(record);
-    assertEquals(5, sinkTask.getIncomingList().size());
+    assertEquals(5, sinkTask.getIncomingQueue().size());
 
     {
-      CompletableFuture<List<?>> flushResult = new CompletableFuture<>();
-      CompletableFuture<List<?>> afterFlushResult = new CompletableFuture<>();
+      CompletableFuture<BlockingQueue<?>> flushResult = new CompletableFuture<>();
+      CompletableFuture<BlockingQueue<?>> afterFlushResult = new CompletableFuture<>();
       beforeFlush.set(
           () -> {
-            flushResult.complete(sinkTask.getIncomingList());
+            flushResult.complete(snapshotIncomingQueue());
           });
       afterFlush.set(
           () -> {
-            afterFlushResult.complete(sinkTask.getIncomingList());
+            afterFlushResult.complete(snapshotIncomingQueue());
           });
       sinkTask.write(record);
       sinkTask.write(record);
@@ -152,5 +158,50 @@ class CassandraSinkTaskBatchTest {
       assertEquals(10, flushResult.get(10, TimeUnit.SECONDS).size());
       assertTrue(afterFlushResult.get(10, TimeUnit.SECONDS).isEmpty());
     }
+  }
+
+  @Test
+  void block_batch_records() throws Exception {
+    Map<String, String> settings = new LinkedHashMap<>();
+    settings.put("topic.mytopic.ks.mytable.mapping", "c1=value");
+    settings.put("topic.mytopic.ks.mytable.consistencyLevel", "ONE");
+
+    TopicConfig topicConfig = new TopicConfig("mytopic", settings, false);
+    when(instanceState.getTopicConfig("mytopic")).thenReturn(topicConfig);
+    List<TableConfig> tableConfigs = new ArrayList<>(topicConfig.getTableConfigs());
+    assertThat(tableConfigs.size()).isEqualTo(1);
+
+    RecordMapper recordMapper1 = mock(RecordMapper.class);
+    when(instanceState.getRecordMapper(tableConfigs.get(0))).thenReturn(recordMapper1);
+    BoundStatement bs1 = mock(BoundStatement.class);
+    when(recordMapper1.map(any(), any())).thenReturn(bs1);
+    when(bs1.setConsistencyLevel(any())).thenReturn(bs1);
+
+    int batchSize = 12; // 2 more the incoming queue size
+    sinkTask.setBatchSize(batchSize);
+
+    CompletableFuture<Void> producer =
+        CompletableFuture.supplyAsync(
+            () -> {
+              for (int i = 0; i < batchSize; i++) {
+                try {
+                  sinkTask.write(record);
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              }
+              return null;
+            });
+
+    // should block until flush is invoked
+    assertThrows(TimeoutException.class, () -> producer.get(5, TimeUnit.SECONDS));
+    sinkTask.flush();
+    assertNull(producer.get(5, TimeUnit.SECONDS));
+    assertEquals(2, snapshotIncomingQueue().size());
+  }
+
+  private BlockingQueue snapshotIncomingQueue() {
+    // snapshot the queue to captures its state before the flush
+    return new LinkedBlockingDeque(sinkTask.getIncomingQueue());
   }
 }
