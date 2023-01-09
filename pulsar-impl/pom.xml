@@ -33,6 +33,7 @@
     <dependency>
       <groupId>com.datastax.oss</groupId>
       <artifactId>messaging-connectors-commons-core</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.pulsar</groupId>
