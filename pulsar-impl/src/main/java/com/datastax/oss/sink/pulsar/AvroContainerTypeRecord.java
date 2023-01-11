@@ -16,8 +16,8 @@
 package com.datastax.oss.sink.pulsar;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -106,10 +106,10 @@ public class AvroContainerTypeRecord implements GenericRecord {
 
   private List<Field> populateFields(JsonNode node) {
     AtomicInteger idx = new AtomicInteger(0);
-    return (List)
-        Lists.newArrayList(node.fieldNames())
-            .stream()
-            .map((f) -> new Field(f, idx.getAndIncrement()))
-            .collect(Collectors.toList());
+    List<String> list = new ArrayList<>();
+    node.fieldNames().forEachRemaining(list::add);
+    return list.stream()
+        .map((f) -> new Field(f, idx.getAndIncrement()))
+        .collect(Collectors.toList());
   }
 }
