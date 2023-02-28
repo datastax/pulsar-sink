@@ -70,6 +70,7 @@
     <jnr.version>3.1.15</jnr.version>
     <avro.version>1.10.2</avro.version>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+    <kafka-clients.version>3.4.0</kafka-clients.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -77,6 +78,12 @@
         <groupId>com.datastax.oss</groupId>
         <artifactId>messaging-connectors-commons-core</artifactId>
         <version>${messaging.connectors.commons.version}</version>
+      </dependency>
+      <dependency>
+        <!-- For messaging-connectors-commons-core. it only uses Kafka Config utilities -->
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>${kafka-clients.version}</version>
       </dependency>
       <dependency>
         <groupId>org.json</groupId>
