@@ -79,7 +79,7 @@ abstract class PulsarCCMTestBase {
         SimpleStatement.builder(
                 "CREATE TYPE udtLogicalTypes (decimalf decimal"
                     + (this.hasDurationType ? ", durationf duration" : "")
-                    + ", uuidf uuid, varintf varint)")
+                    + ", uuidf uuid, varintf varint, datef date, timef time, timestampf timestamp)")
             .setTimeout(Duration.ofSeconds(10))
             .build());
     session.execute(
@@ -106,7 +106,10 @@ abstract class PulsarCCMTestBase {
                     + "r varint,"
                     + "s list<frozen<udt>>,"
                     + "t frozen<udtLogicalTypes>,"
-                    + "u list<frozen<udtLogicalTypes>>)")
+                    + "u list<frozen<udtLogicalTypes>>,"
+                    + "v date,"
+                    + "w time,"
+                    + "x timestamp)")
             .build());
 
     connectorProperties = new HashMap<>();

@@ -32,6 +32,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -113,6 +116,15 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
   private static final org.apache.avro.Schema varintType =
       CQL_VARINT_LOGICAL_TYPE.addToSchema(
           org.apache.avro.Schema.create(org.apache.avro.Schema.Type.BYTES));
+  private static final org.apache.avro.Schema dateType =
+      LogicalTypes.date()
+          .addToSchema(org.apache.avro.Schema.create(org.apache.avro.Schema.Type.INT));
+  private static final org.apache.avro.Schema timestampMillisType =
+      LogicalTypes.timestampMillis()
+          .addToSchema(org.apache.avro.Schema.create(org.apache.avro.Schema.Type.LONG));
+  private static final org.apache.avro.Schema timeMicrosType =
+      LogicalTypes.timeMicros()
+          .addToSchema(org.apache.avro.Schema.create(org.apache.avro.Schema.Type.LONG));
 
   public AvroLogicalTypesTest(CCMCluster ccm, CqlSession session) throws Exception {
     super(ccm, session);
@@ -122,7 +134,7 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     final String mapping =
         "a=key, o=value.decimalField"
             + (this.hasDurationType ? ", p=value.durationField" : "")
-            + ", q=value.uuidField, r=value.varintField, t=value.udtField, u=value.udtListField";
+            + ", q=value.uuidField, r=value.varintField, t=value.udtField, u=value.udtListField, v=value.dateField, w=value.timeField, x=value.timestampField";
     connectorProperties.put("topic.mytopic." + keyspaceName + ".table1.mapping", mapping);
   }
 
@@ -132,6 +144,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     CqlDuration duration = CqlDuration.newInstance(1, 2, 320688000000000L);
     UUID uuid = UUID.randomUUID();
     BigInteger bigInteger = new BigInteger("314");
+    LocalDate date = LocalDate.of(2020, 1, 2);
+    LocalTime time = LocalTime.of(3, 4, 5);
+    Instant timestamp = Instant.ofEpochMilli(1680043430008L);
 
     List<org.apache.avro.Schema.Field> udtFields = new ArrayList<>();
     udtFields.add(createDecimalField("decimalf"));
@@ -140,6 +155,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     }
     udtFields.add(createUUIDField("uuidf"));
     udtFields.add(createVarintField("varintf"));
+    udtFields.add(createDateField("datef"));
+    udtFields.add(createTimeField("timef"));
+    udtFields.add(createTimestampField("timestampf"));
     org.apache.avro.Schema udtSchema =
         org.apache.avro.Schema.createRecord("udt", "", "ns1", false, udtFields);
     org.apache.avro.generic.GenericRecord udtRecord = new GenericData.Record(udtSchema);
@@ -149,6 +167,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     }
     udtRecord.put("uuidf", uuid.toString());
     udtRecord.put("varintf", ByteBuffer.wrap(bigInteger.toByteArray()));
+    udtRecord.put("datef", (int) date.toEpochDay());
+    udtRecord.put("timef", time.toNanoOfDay() / 1000);
+    udtRecord.put("timestampf", timestamp.toEpochMilli());
 
     org.apache.avro.Schema udtListSchema = org.apache.avro.Schema.createArray(udtSchema);
     org.apache.avro.generic.GenericArray udtList = new GenericData.Array<>(2, udtListSchema);
@@ -163,6 +184,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     fields.add(createVarintField("varintField"));
     fields.add(createUdtField(udtSchema));
     fields.add(createUdtListField(udtListSchema));
+    fields.add(createDateField("dateField"));
+    fields.add(createTimeField("timeField"));
+    fields.add(createTimestampField("timestampField"));
     org.apache.avro.Schema avroSchema =
         org.apache.avro.Schema.createRecord("logical_types", "", "ns1", false, fields);
     org.apache.avro.generic.GenericRecord logicalTypesRecord = new GenericData.Record(avroSchema);
@@ -172,6 +196,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
     logicalTypesRecord.put("varintField", ByteBuffer.wrap(bigInteger.toByteArray()));
     logicalTypesRecord.put("udtField", udtRecord);
     logicalTypesRecord.put("udtListField", udtList);
+    logicalTypesRecord.put("dateField", (int) date.toEpochDay());
+    logicalTypesRecord.put("timeField", time.toNanoOfDay() / 1000);
+    logicalTypesRecord.put("timestampField", timestamp.toEpochMilli());
 
     Schema pulsarSchema = new NativeSchemaWrapper(avroSchema, SchemaType.AVRO);
     org.apache.avro.generic.GenericRecord nullLogicalTypesRecord =
@@ -233,7 +260,13 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
         }
         assertEquals(uuid, value.getUuid("uuidf"));
         assertEquals(bigInteger, value.getBigInteger("varintf"));
+        assertEquals(date, value.getLocalDate("datef"));
+        assertEquals(time, value.getLocalTime("timef"));
+        assertEquals(timestamp, value.getInstant("timestampf"));
       }
+      assertEquals(date, results.get(0).getLocalDate("v"));
+      assertEquals(time, results.get(0).getLocalTime("w"));
+      assertEquals(timestamp, results.get(0).getInstant("x"));
       assertEquals(839, results.get(1).getInt("a"));
       assertNull(results.get(1).getBigDecimal("o"));
       if (this.hasDurationType) {
@@ -243,6 +276,9 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
       assertNull(results.get(1).getBigInteger("r"));
       assertNull(results.get(1).getUdtValue("t"));
       assertTrue(results.get(1).get("u", listOfUdtType).isEmpty());
+      assertNull(results.get(1).getLocalDate("v"));
+      assertNull(results.get(1).getLocalTime("w"));
+      assertNull(results.get(1).getInstant("x"));
 
     } finally {
       // always print Sink logs
@@ -261,6 +297,43 @@ public class AvroLogicalTypesTest extends PulsarCCMTestBase {
             org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
 
     return optionalUdtField;
+  }
+
+  private org.apache.avro.Schema.Field createDateField(String name) {
+    org.apache.avro.Schema.Field dateField = new org.apache.avro.Schema.Field(name, dateType);
+    org.apache.avro.Schema.Field optionalDateField =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(dateField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalDateField;
+  }
+
+  private org.apache.avro.Schema.Field createTimeField(String name) {
+    org.apache.avro.Schema.Field timeField = new org.apache.avro.Schema.Field(name, timeMicrosType);
+    org.apache.avro.Schema.Field optionalTimeField =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(timeField.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalTimeField;
+  }
+
+  private org.apache.avro.Schema.Field createTimestampField(String name) {
+    org.apache.avro.Schema.Field timestamp =
+        new org.apache.avro.Schema.Field(name, timestampMillisType);
+    org.apache.avro.Schema.Field optionalTimestampField =
+        new org.apache.avro.Schema.Field(
+            name,
+            SchemaBuilder.unionOf().nullType().and().type(timestamp.schema()).endUnion(),
+            null,
+            org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE);
+
+    return optionalTimestampField;
   }
 
   private org.apache.avro.Schema.Field createUdtField(org.apache.avro.Schema udtSchema) {
