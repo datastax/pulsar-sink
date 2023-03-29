@@ -18,6 +18,9 @@ package com.datastax.oss.sink.pulsar;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DECIMAL;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DURATION;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_VARINT;
+import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.DATE;
+import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIME_MICROS;
+import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIMESTAMP_MILLIS;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -63,7 +66,7 @@ public final class AvroTypeUtil {
   }
 
   /**
-   * Handles logical types that originates from an upstream C* CDC only.
+   * Handles logical types that originate from an upstream C* CDC only.
    *
    * @return string representation of the logical type to leverage {@link
    *     com.datastax.oss.dsbulk.codecs.api.ConvertingCodec}
@@ -86,6 +89,21 @@ public final class AvroTypeUtil {
                 return logicalTypeConverters
                     .get(CQL_VARINT)
                     .fromBytes((ByteBuffer) fieldValue, null, null)
+                    .toString();
+              } else if (isDate(logicalType)) {
+                return logicalTypeConverters
+                    .get(DATE)
+                    .fromInt((int) fieldValue, null, null)
+                    .toString();
+              } else if (isTimeMicros(logicalType)) {
+                return logicalTypeConverters
+                    .get(TIME_MICROS)
+                    .fromLong((long) fieldValue, null, null)
+                    .toString();
+              } else if (isTimestampMillis(logicalType)) {
+                return logicalTypeConverters
+                    .get(TIMESTAMP_MILLIS)
+                    .fromLong((long) fieldValue, null, null)
                     .toString();
               }
               return fieldValue instanceof GenericRecord
@@ -122,6 +140,21 @@ public final class AvroTypeUtil {
                     .get(CQL_VARINT)
                     .fromBytes((ByteBuffer) fieldValue, null, null)
                     .toString();
+              } else if (isDate(logicalType)) {
+                return logicalTypeConverters
+                    .get(DATE)
+                    .fromInt((int) fieldValue, null, null)
+                    .toString();
+              } else if (isTimeMicros(logicalType)) {
+                return logicalTypeConverters
+                    .get(TIME_MICROS)
+                    .fromLong((long) fieldValue, null, null)
+                    .toString();
+              } else if (isTimestampMillis(logicalType)) {
+                return logicalTypeConverters
+                    .get(TIMESTAMP_MILLIS)
+                    .fromLong((long) fieldValue, null, null)
+                    .toString();
               }
               return fieldValue instanceof org.apache.avro.generic.GenericRecord
                       && logicalTypeConverters.containsKey(logicalType.getName())
@@ -143,6 +176,18 @@ public final class AvroTypeUtil {
 
   private static boolean isVarint(LogicalType varint) {
     return CQL_VARINT.equals(varint.getName());
+  }
+
+  private static boolean isDate(LogicalType type) {
+    return DATE.equals(type.getName());
+  }
+
+  private static boolean isTimestampMillis(LogicalType type) {
+    return TIMESTAMP_MILLIS.equals(type.getName());
+  }
+
+  private static boolean isTimeMicros(LogicalType type) {
+    return TIME_MICROS.equals(type.getName());
   }
 
   private static Optional<LogicalType> getLogicalType(GenericRecord record, String fieldName) {
@@ -180,11 +225,19 @@ public final class AvroTypeUtil {
       logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
       logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
       logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
+      logicalTypeConverters.put(DATE, new CqlLogicalTypes.DateConversion());
+      logicalTypeConverters.put(TIME_MICROS, new CqlLogicalTypes.TimeConversion());
+      logicalTypeConverters.put(TIMESTAMP_MILLIS, new CqlLogicalTypes.TimestampConversion());
+
+      System.out.println("Registered logical types" + logicalTypeConverters.keySet());
     } else {
       // Deregister logical type converters
       logicalTypeConverters.remove(CQL_DECIMAL);
       logicalTypeConverters.remove(CQL_DURATION);
       logicalTypeConverters.remove(CQL_VARINT);
+      logicalTypeConverters.remove(DATE);
+      logicalTypeConverters.remove(TIME_MICROS);
+      logicalTypeConverters.remove(TIMESTAMP_MILLIS);
     }
 
     AvroTypeUtil.decodeCDCDataTypes = decodeCDCDataTypes;
