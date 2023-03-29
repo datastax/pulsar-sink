@@ -19,8 +19,12 @@ import com.datastax.oss.driver.api.core.data.CqlDuration;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import org.apache.avro.Conversion;
 import org.apache.avro.LogicalType;
+import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 
@@ -28,6 +32,10 @@ public class CqlLogicalTypes {
   public static final String CQL_VARINT = "cql_varint";
   public static final String CQL_DECIMAL = "cql_decimal";
   public static final String CQL_DURATION = "cql_duration";
+
+  public static final String DATE = LogicalTypes.date().getName();
+  public static final String TIME_MICROS = LogicalTypes.timeMicros().getName();
+  public static final String TIMESTAMP_MILLIS = LogicalTypes.timestampMillis().getName();
 
   public static class CqlDurationConversion extends Conversion<CqlDuration> {
     @Override
@@ -86,6 +94,57 @@ public class CqlLogicalTypes {
       byte[] arr = new byte[value.remaining()];
       value.duplicate().get(arr);
       return new BigInteger(arr);
+    }
+  }
+
+  public static class DateConversion extends Conversion<LocalDate> {
+    @Override
+    public Class<LocalDate> getConvertedType() {
+      return LocalDate.class;
+    }
+
+    @Override
+    public String getLogicalTypeName() {
+      return DATE;
+    }
+
+    @Override
+    public LocalDate fromInt(Integer value, Schema schema, LogicalType type) {
+      return LocalDate.ofEpochDay(value);
+    }
+  }
+
+  public static class TimeConversion extends Conversion<LocalTime> {
+    @Override
+    public Class<LocalTime> getConvertedType() {
+      return LocalTime.class;
+    }
+
+    @Override
+    public String getLogicalTypeName() {
+      return TIME_MICROS;
+    }
+
+    @Override
+    public LocalTime fromLong(Long value, Schema schema, LogicalType type) {
+      return LocalTime.ofNanoOfDay(value * 1000);
+    }
+  }
+
+  public static class TimestampConversion extends Conversion<Instant> {
+    @Override
+    public Class<Instant> getConvertedType() {
+      return Instant.class;
+    }
+
+    @Override
+    public String getLogicalTypeName() {
+      return TIMESTAMP_MILLIS;
+    }
+
+    @Override
+    public Instant fromLong(Long value, Schema schema, LogicalType type) {
+      return Instant.ofEpochMilli(value);
     }
   }
 
