@@ -9,7 +9,7 @@ To download and install this connector please follow the procedure detailed [her
 
 ## Documentation
 
-All documentation is available online [here](https://docs.datastax.com/en/pulsar-connector/1.4/index.html).
+All documentation is available online [here](https://docs.datastax.com/en/pulsar-connector/docs/index.html).
 
 ## Building from the sources
 
