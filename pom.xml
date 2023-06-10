@@ -43,7 +43,7 @@
     <java.version>1.8</java.version>
     <java.release.version>8</java.release.version>
     <caffeine.version>2.6.2</caffeine.version>
-    <oss.driver.version>4.6.0</oss.driver.version>
+    <oss.driver.version>4.13.0</oss.driver.version>
     <dsbulk.version>1.6.0</dsbulk.version>
     <reactive-streams.version>1.0.3</reactive-streams.version>
     <pulsar.version>2.8.2</pulsar.version>
