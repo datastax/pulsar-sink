@@ -55,6 +55,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -94,23 +95,23 @@ class SimpleEndToEndSimulacronIT {
           + "+ AND TTL :"
           + SinkUtil.TTL_VARNAME;
   private static final String DELETE_STATEMENT = "DELETE FROM ks1.table1 WHERE a = :a AND b = :b";
-  private static final ImmutableMap<String, String> PARAM_TYPES =
-      ImmutableMap.<String, String>builder()
+  private static final LinkedHashMap<String, String> PARAM_TYPES =
+          new LinkedHashMap<>(ImmutableMap.<String, String>builder()
           .put("a", "int")
           .put("b", "varchar")
           .put(SinkUtil.TIMESTAMP_VARNAME, "bigint")
-          .build();
+          .build());
 
-  private static final ImmutableMap<String, String> PARAM_TYPES_TTL =
-      ImmutableMap.<String, String>builder()
+  private static final LinkedHashMap<String, String> PARAM_TYPES_TTL =
+          new LinkedHashMap(ImmutableMap.<String, String>builder()
           .put("a", "int")
           .put("b", "varchar")
           .put(SinkUtil.TIMESTAMP_VARNAME, "bigint")
           .put(SinkUtil.TTL_VARNAME, "bigint")
-          .build();
+          .build());
 
-  private static final ImmutableMap<String, String> PARAM_TYPES_CUSTOM_QUERY =
-      ImmutableMap.<String, String>builder().put("some1", "int").put("some2", "varchar").build();
+  private static final LinkedHashMap<String, String> PARAM_TYPES_CUSTOM_QUERY =
+          new LinkedHashMap(ImmutableMap.<String, String>builder().put("some1", "int").put("some2", "varchar").build());
 
   private static final String INSTANCE_NAME = "myinstance";
   private final BoundCluster simulacron;
@@ -237,25 +238,25 @@ class SimpleEndToEndSimulacronIT {
         PARAM_TYPES_TTL);
   }
 
-  private static Map<String, Object> makeParamsTtl(int a, String b, long timestamp, long ttl) {
-    return ImmutableMap.<String, Object>builder()
+  private static LinkedHashMap<String, Object> makeParamsTtl(int a, String b, long timestamp, long ttl) {
+    return new LinkedHashMap<>(ImmutableMap.<String, Object>builder()
         .put("a", a)
         .put("b", b)
         .put(SinkUtil.TIMESTAMP_VARNAME, timestamp)
         .put(SinkUtil.TTL_VARNAME, ttl)
-        .build();
+        .build());
   }
 
-  private static Map<String, Object> makeParams(int a, String b, long timestamp) {
-    return ImmutableMap.<String, Object>builder()
+  private static LinkedHashMap<String, Object> makeParams(int a, String b, long timestamp) {
+    return new LinkedHashMap<>(ImmutableMap.<String, Object>builder()
         .put("a", a)
         .put("b", b)
         .put(SinkUtil.TIMESTAMP_VARNAME, timestamp)
-        .build();
+        .build());
   }
 
-  private static Map<String, Object> makeParamsCustomQuery(int a, String b) {
-    return ImmutableMap.<String, Object>builder().put("some1", a).put("some2", b).build();
+  private static LinkedHashMap<String, Object> makeParamsCustomQuery(int a, String b) {
+    return new LinkedHashMap(ImmutableMap.<String, Object>builder().put("some1", a).put("some2", b).build());
   }
 
   @BeforeEach
@@ -320,7 +321,7 @@ class SimpleEndToEndSimulacronIT {
             .build();
 
     String query = "UPDATE ks1.mycounter SET c = c + :c WHERE a = :a AND b = :b";
-    Query bad1 = new Query(query, Collections.emptyList(), makeParams(32, "fail", 2), paramTypes);
+    Query bad1 = new Query(query, Collections.emptyList(), makeParams(32, "fail", 2), new LinkedHashMap<>(paramTypes));
     simulacron.prime(when(bad1).then(serverError("bad thing")).applyToPrepare());
 
     ImmutableMap<String, Object> props =
@@ -347,8 +348,8 @@ class SimpleEndToEndSimulacronIT {
         new Query(
             "DELETE FROM ks1.mycounter WHERE a = :a AND b = :b",
             Collections.emptyList(),
-            ImmutableMap.<String, Object>builder().put("a", 37).put("b", "delete").build(),
-            ImmutableMap.<String, String>builder().put("a", "int").put("b", "varchar").build());
+                new LinkedHashMap<>(ImmutableMap.<String, Object>builder().put("a", 37).put("b", "delete").build()),
+                new LinkedHashMap<>(ImmutableMap.<String, String>builder().put("a", "int").put("b", "varchar").build()));
     simulacron.prime(when(bad1).then(serverError("bad thing")));
     Map<String, Object> connProps = new HashMap<>();
     connProps.put("name", INSTANCE_NAME);
