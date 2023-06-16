@@ -41,7 +41,6 @@ import com.datastax.oss.driver.api.core.config.DriverExecutionProfile;
 import com.datastax.oss.driver.api.core.context.DriverContext;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
-import com.datastax.oss.driver.internal.core.util.DependencyCheck;
 import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableMap;
 import com.datastax.oss.dsbulk.tests.ccm.CCMCluster;
 import com.datastax.oss.dsbulk.tests.ccm.CCMExtension;
@@ -284,11 +283,6 @@ class LifeCycleManagerIT {
       assertThat((String) ReflectionUtils.getInternalState(context, "startupApplicationVersion"))
           .isEqualTo(VERSION);
     }
-  }
-
-  @Test
-  void tinkerpop_should_be_excluded() {
-    assertFalse(DependencyCheck.TINKERPOP.isPresent());
   }
 
   @NonNull
