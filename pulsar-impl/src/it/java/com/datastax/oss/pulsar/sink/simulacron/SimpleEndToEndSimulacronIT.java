@@ -55,6 +55,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -80,7 +81,7 @@ import org.mockito.Mockito;
 @ExtendWith(StreamInterceptingExtension.class)
 @ExtendWith(LogInterceptingExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SimulacronConfig(dseVersion = "5.0.8")
+@SimulacronConfig()
 class SimpleEndToEndSimulacronIT {
 
   private static final String INSERT_STATEMENT =
@@ -94,23 +95,29 @@ class SimpleEndToEndSimulacronIT {
           + "+ AND TTL :"
           + SinkUtil.TTL_VARNAME;
   private static final String DELETE_STATEMENT = "DELETE FROM ks1.table1 WHERE a = :a AND b = :b";
-  private static final ImmutableMap<String, String> PARAM_TYPES =
-      ImmutableMap.<String, String>builder()
-          .put("a", "int")
-          .put("b", "varchar")
-          .put(SinkUtil.TIMESTAMP_VARNAME, "bigint")
-          .build();
+  private static final LinkedHashMap<String, String> PARAM_TYPES =
+      new LinkedHashMap<>(
+          ImmutableMap.<String, String>builder()
+              .put("a", "int")
+              .put("b", "varchar")
+              .put(SinkUtil.TIMESTAMP_VARNAME, "bigint")
+              .build());
 
-  private static final ImmutableMap<String, String> PARAM_TYPES_TTL =
-      ImmutableMap.<String, String>builder()
-          .put("a", "int")
-          .put("b", "varchar")
-          .put(SinkUtil.TIMESTAMP_VARNAME, "bigint")
-          .put(SinkUtil.TTL_VARNAME, "bigint")
-          .build();
+  private static final LinkedHashMap<String, String> PARAM_TYPES_TTL =
+      new LinkedHashMap(
+          ImmutableMap.<String, String>builder()
+              .put("a", "int")
+              .put("b", "varchar")
+              .put(SinkUtil.TIMESTAMP_VARNAME, "bigint")
+              .put(SinkUtil.TTL_VARNAME, "bigint")
+              .build());
 
-  private static final ImmutableMap<String, String> PARAM_TYPES_CUSTOM_QUERY =
-      ImmutableMap.<String, String>builder().put("some1", "int").put("some2", "varchar").build();
+  private static final LinkedHashMap<String, String> PARAM_TYPES_CUSTOM_QUERY =
+      new LinkedHashMap(
+          ImmutableMap.<String, String>builder()
+              .put("some1", "int")
+              .put("some2", "varchar")
+              .build());
 
   private static final String INSTANCE_NAME = "myinstance";
   private final BoundCluster simulacron;
@@ -163,6 +170,10 @@ class SimpleEndToEndSimulacronIT {
             .put("contactPoints", hostname)
             .put("port", port)
             .put("loadBalancing.localDc", "dc1")
+            // since we upgraded to Driver 4.16.x, we need to explicitly set the protocol version
+            // otherwise it will try only DSE_v1 and DSE_v2 because they are not considered "BETA"
+            // https://github.com/datastax/java-driver/blob/4270f93277249abb513bc2abf2ff7a7c481b1d0d/core/src/main/java/com/datastax/oss/driver/internal/core/channel/ChannelFactory.java#L163
+            .put("datastax-java-driver.advanced.protocol.version", "V4")
             .put("topic.mytopic.ks1.table1.mapping", "a=key, b=value.field1")
             .put("topic.mytopic_with_ttl.ks1.table1_with_ttl.mapping", "a=key, b=value, __ttl=key")
             .put("topic.yourtopic.ks1.table2.mapping", "a=key, b=value.field1")
@@ -237,25 +248,29 @@ class SimpleEndToEndSimulacronIT {
         PARAM_TYPES_TTL);
   }
 
-  private static Map<String, Object> makeParamsTtl(int a, String b, long timestamp, long ttl) {
-    return ImmutableMap.<String, Object>builder()
-        .put("a", a)
-        .put("b", b)
-        .put(SinkUtil.TIMESTAMP_VARNAME, timestamp)
-        .put(SinkUtil.TTL_VARNAME, ttl)
-        .build();
+  private static LinkedHashMap<String, Object> makeParamsTtl(
+      int a, String b, long timestamp, long ttl) {
+    return new LinkedHashMap<>(
+        ImmutableMap.<String, Object>builder()
+            .put("a", a)
+            .put("b", b)
+            .put(SinkUtil.TIMESTAMP_VARNAME, timestamp)
+            .put(SinkUtil.TTL_VARNAME, ttl)
+            .build());
   }
 
-  private static Map<String, Object> makeParams(int a, String b, long timestamp) {
-    return ImmutableMap.<String, Object>builder()
-        .put("a", a)
-        .put("b", b)
-        .put(SinkUtil.TIMESTAMP_VARNAME, timestamp)
-        .build();
+  private static LinkedHashMap<String, Object> makeParams(int a, String b, long timestamp) {
+    return new LinkedHashMap<>(
+        ImmutableMap.<String, Object>builder()
+            .put("a", a)
+            .put("b", b)
+            .put(SinkUtil.TIMESTAMP_VARNAME, timestamp)
+            .build());
   }
 
-  private static Map<String, Object> makeParamsCustomQuery(int a, String b) {
-    return ImmutableMap.<String, Object>builder().put("some1", a).put("some2", b).build();
+  private static LinkedHashMap<String, Object> makeParamsCustomQuery(int a, String b) {
+    return new LinkedHashMap(
+        ImmutableMap.<String, Object>builder().put("some1", a).put("some2", b).build());
   }
 
   @BeforeEach
@@ -320,15 +335,17 @@ class SimpleEndToEndSimulacronIT {
             .build();
 
     String query = "UPDATE ks1.mycounter SET c = c + :c WHERE a = :a AND b = :b";
-    Query bad1 = new Query(query, Collections.emptyList(), makeParams(32, "fail", 2), paramTypes);
+    Query bad1 =
+        new Query(
+            query,
+            Collections.emptyList(),
+            makeParams(32, "fail", 2),
+            new LinkedHashMap<>(paramTypes));
     simulacron.prime(when(bad1).then(serverError("bad thing")).applyToPrepare());
 
     ImmutableMap<String, Object> props =
         ImmutableMap.<String, Object>builder()
-            .put("name", INSTANCE_NAME)
-            .put("contactPoints", (String) connectorProperties.get("contactPoints"))
-            .put("port", (String) connectorProperties.get("port"))
-            .put("loadBalancing.localDc", "dc1")
+            .putAll(connectorProperties)
             .put("topic.mytopic.ks1.mycounter.mapping", "a=key, b=value, c=value.f2")
             .build();
     assertThatThrownBy(() -> task.open(props, sinkContext))
@@ -347,14 +364,15 @@ class SimpleEndToEndSimulacronIT {
         new Query(
             "DELETE FROM ks1.mycounter WHERE a = :a AND b = :b",
             Collections.emptyList(),
-            ImmutableMap.<String, Object>builder().put("a", 37).put("b", "delete").build(),
-            ImmutableMap.<String, String>builder().put("a", "int").put("b", "varchar").build());
+            new LinkedHashMap<>(
+                ImmutableMap.<String, Object>builder().put("a", 37).put("b", "delete").build()),
+            new LinkedHashMap<>(
+                ImmutableMap.<String, String>builder()
+                    .put("a", "int")
+                    .put("b", "varchar")
+                    .build()));
     simulacron.prime(when(bad1).then(serverError("bad thing")));
-    Map<String, Object> connProps = new HashMap<>();
-    connProps.put("name", INSTANCE_NAME);
-    connProps.put("contactPoints", hostname);
-    connProps.put("port", port);
-    connProps.put("loadBalancing.localDc", "dc1");
+    Map<String, Object> connProps = new HashMap<>(connectorProperties);
     connProps.put(
         "topic.mytopic.ks1.mycounter.mapping", "a=value.bigint, b=value.text, c=value.int");
 

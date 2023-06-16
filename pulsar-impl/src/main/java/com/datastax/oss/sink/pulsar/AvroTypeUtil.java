@@ -19,8 +19,8 @@ import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DECIMAL;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DURATION;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_VARINT;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.DATE;
-import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIME_MICROS;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIMESTAMP_MILLIS;
+import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIME_MICROS;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
