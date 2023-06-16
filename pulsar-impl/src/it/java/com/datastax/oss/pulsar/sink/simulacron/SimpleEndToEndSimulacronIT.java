@@ -81,7 +81,7 @@ import org.mockito.Mockito;
 @ExtendWith(StreamInterceptingExtension.class)
 @ExtendWith(LogInterceptingExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SimulacronConfig(dseVersion = "5.0.8")
+@SimulacronConfig()
 class SimpleEndToEndSimulacronIT {
 
   private static final String INSERT_STATEMENT =
@@ -170,6 +170,10 @@ class SimpleEndToEndSimulacronIT {
             .put("contactPoints", hostname)
             .put("port", port)
             .put("loadBalancing.localDc", "dc1")
+            // since we upgraded to Driver 4.16.x, we need to explicitly set the protocol version
+            // otherwise it will try only DSE_v1 and DSE_v2 because they are not considered "BETA"
+            // https://github.com/datastax/java-driver/blob/4270f93277249abb513bc2abf2ff7a7c481b1d0d/core/src/main/java/com/datastax/oss/driver/internal/core/channel/ChannelFactory.java#L163
+            .put("datastax-java-driver.advanced.protocol.version", "V4")
             .put("topic.mytopic.ks1.table1.mapping", "a=key, b=value.field1")
             .put("topic.mytopic_with_ttl.ks1.table1_with_ttl.mapping", "a=key, b=value, __ttl=key")
             .put("topic.yourtopic.ks1.table2.mapping", "a=key, b=value.field1")
@@ -341,10 +345,7 @@ class SimpleEndToEndSimulacronIT {
 
     ImmutableMap<String, Object> props =
         ImmutableMap.<String, Object>builder()
-            .put("name", INSTANCE_NAME)
-            .put("contactPoints", (String) connectorProperties.get("contactPoints"))
-            .put("port", (String) connectorProperties.get("port"))
-            .put("loadBalancing.localDc", "dc1")
+            .putAll(connectorProperties)
             .put("topic.mytopic.ks1.mycounter.mapping", "a=key, b=value, c=value.f2")
             .build();
     assertThatThrownBy(() -> task.open(props, sinkContext))
@@ -371,11 +372,7 @@ class SimpleEndToEndSimulacronIT {
                     .put("b", "varchar")
                     .build()));
     simulacron.prime(when(bad1).then(serverError("bad thing")));
-    Map<String, Object> connProps = new HashMap<>();
-    connProps.put("name", INSTANCE_NAME);
-    connProps.put("contactPoints", hostname);
-    connProps.put("port", port);
-    connProps.put("loadBalancing.localDc", "dc1");
+    Map<String, Object> connProps = new HashMap<>(connectorProperties);
     connProps.put(
         "topic.mytopic.ks1.mycounter.mapping", "a=value.bigint, b=value.text, c=value.int");
 
