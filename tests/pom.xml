@@ -132,12 +132,6 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>pulsar</artifactId>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
   <build>

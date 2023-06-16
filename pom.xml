@@ -36,15 +36,15 @@
     <module>tests</module>
   </modules>
   <properties>
-    <messaging.connectors.commons.version>1.0.15-SNAPSHOT</messaging.connectors.commons.version>
+    <messaging.connectors.commons.version>1.0.15</messaging.connectors.commons.version>
     <org.json.version>20230227</org.json.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
     <java.release.version>8</java.release.version>
     <caffeine.version>2.6.2</caffeine.version>
-    <oss.driver.version>4.16.1-SNAPSHOT</oss.driver.version>
-    <dsbulk.version>1.11.0-SNAPSHOT</dsbulk.version>
+    <oss.driver.version>4.16.0</oss.driver.version>
+    <dsbulk.version>1.10.0</dsbulk.version>
     <reactive-streams.version>1.0.3</reactive-streams.version>
     <pulsar.version>2.8.2</pulsar.version>
     <slf4j.version>1.7.25</slf4j.version>
