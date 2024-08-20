@@ -10,9 +10,7 @@ on:
 
 jobs:
   integration-tests:
-    runs-on: ubuntu-20.04
-      container:
-        image: python:2.7.18-buster
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
