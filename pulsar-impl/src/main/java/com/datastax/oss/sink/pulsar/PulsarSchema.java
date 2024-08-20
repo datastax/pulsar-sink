@@ -17,6 +17,8 @@ package com.datastax.oss.sink.pulsar;
 
 import com.datastax.oss.common.sink.AbstractField;
 import com.datastax.oss.common.sink.AbstractSchema;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +60,9 @@ public class PulsarSchema implements AbstractSchema {
       return INT64;
     }
     if (value instanceof byte[]) {
+      return BYTES;
+    }
+    if (value instanceof ByteBuffer) {
       return BYTES;
     }
     if (value instanceof Boolean) {
