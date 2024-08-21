@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
@@ -56,6 +57,46 @@ class MetadataCreatorTest {
 
     public void setAge(int age) {
       this.age = age;
+    }
+  }
+
+  public static class MyPojoWithBlob {
+
+    String name;
+    int age;
+    byte[] blob;
+    ByteBuffer blobBuffer;
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    public int getAge() {
+      return age;
+    }
+
+    public void setAge(int age) {
+      this.age = age;
+    }
+
+    public byte[] getBlob() {
+      return blob;
+    }
+
+    public void setBlob(byte[] blob) {
+      this.blob = blob;
+    }
+
+    public ByteBuffer getBlobBuffer() {
+      return blobBuffer;
+    }
+
+    public void setBlobBuffer(ByteBuffer blobBuffer) {
+      this.blobBuffer = blobBuffer;
     }
   }
 
@@ -211,5 +252,80 @@ class MetadataCreatorTest {
         .isEqualTo(GenericType.of(JsonNode.class));
     assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("age", CQL_TYPE))
         .isEqualTo(GenericType.of(JsonNode.class));
+  }
+
+  @Test
+  void handleByteBuffer()
+          throws IOException {
+    // given
+    Schema schema = Schema.BYTES;
+    byte[] bytes = "{\"name\":\"Bobby McGee\",\"age\":21}".getBytes(StandardCharsets.UTF_8);
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+    Record<GenericRecord> record =
+            new PulsarRecordImpl(
+                    "persistent://tenant/namespace/mytopic", "{\"pk\":15}", byteBuffer, schema);
+
+    LocalSchemaRegistry localSchemaRegistry = new LocalSchemaRegistry();
+    PulsarSinkRecordImpl pulsarSinkRecordImpl =
+            new PulsarSinkRecordImpl(record, localSchemaRegistry);
+
+    InnerDataAndMetadata innerDataAndMetadataValue =
+            MetadataCreator.makeMeta(pulsarSinkRecordImpl.value());
+
+    InnerDataAndMetadata innerDataAndMetadataKey =
+            MetadataCreator.makeMeta(pulsarSinkRecordImpl.key());
+
+    assertThat(innerDataAndMetadataKey.getInnerData().getFieldValue("pk"))
+            .isEqualTo(IntNode.valueOf(15));
+    assertThat(innerDataAndMetadataKey.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataKey.getInnerMetadata().getFieldType("pk", CQL_TYPE))
+            .isEqualTo(GenericType.of(JsonNode.class));
+
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("name"))
+            .isEqualTo(TextNode.valueOf("Bobby McGee"));
+    assertThat(innerDataAndMetadataValue.getInnerData().getFieldValue("age"))
+            .isEqualTo(IntNode.valueOf(21));
+    assertThat(innerDataAndMetadataValue.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("name", CQL_TYPE))
+            .isEqualTo(GenericType.of(JsonNode.class));
+    assertThat(innerDataAndMetadataValue.getInnerMetadata().getFieldType("age", CQL_TYPE))
+            .isEqualTo(GenericType.of(JsonNode.class));
+  }
+
+  @Test
+  void handleByteBufferStruct() throws IOException {
+    // given
+    Schema schema = Schema.AVRO(MyPojoWithBlob.class);
+    GenericRecord object = new GenericRecordImpl()
+            .put("name", "Bobby McGee")
+            .put("age", 21)
+            .put("blob", new byte[] {1, 2, 3, 4})
+            .put("blobBuffer", ByteBuffer.wrap(new byte[] {1, 2, 3, 4}));
+    Record<GenericRecord> record =
+            new PulsarRecordImpl("persistent://tenant/namespace/mytopic", null, object, schema);
+
+    LocalSchemaRegistry localSchemaRegistry = new LocalSchemaRegistry();
+    PulsarSinkRecordImpl pulsarSinkRecordImpl =
+            new PulsarSinkRecordImpl(record, localSchemaRegistry);
+
+    InnerDataAndMetadata innerDataAndMetadata =
+            MetadataCreator.makeMeta(pulsarSinkRecordImpl.value());
+
+    // then
+    assertThat(innerDataAndMetadata.getInnerData().getFieldValue("name")).isEqualTo("Bobby McGee");
+    assertThat(innerDataAndMetadata.getInnerData().getFieldValue("age")).isEqualTo(21);
+    assertThat(innerDataAndMetadata.getInnerData().getFieldValue("blob")).isEqualTo(ByteBuffer.wrap(new byte[] {1, 2, 3, 4}));
+    assertThat(innerDataAndMetadata.getInnerData().getFieldValue("blobBuffer")).isEqualTo(ByteBuffer.wrap(new byte[] {1, 2, 3, 4}));
+    assertThat(innerDataAndMetadata.getInnerMetadata()).isNotNull();
+    assertThat(innerDataAndMetadata.getInnerMetadata().getFieldType("name", CQL_TYPE))
+            .isEqualTo(GenericType.STRING);
+    assertThat(innerDataAndMetadata.getInnerMetadata().getFieldType("age", CQL_TYPE))
+            .isEqualTo(GenericType.INTEGER);
+    // GenericType.BYTE_BUFFER in both cases, see StructData.getFieldValue
+    // The driver requires a ByteBuffer rather than byte[] when inserting a blob.
+    assertThat(innerDataAndMetadata.getInnerMetadata().getFieldType("blob", CQL_TYPE))
+            .isEqualTo(GenericType.BYTE_BUFFER);
+    assertThat(innerDataAndMetadata.getInnerMetadata().getFieldType("blobBuffer", CQL_TYPE))
+            .isEqualTo(GenericType.BYTE_BUFFER);
   }
 }

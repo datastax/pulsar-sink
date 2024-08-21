@@ -20,6 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.AbstractSinkRecord;
 import com.datastax.oss.common.sink.AbstractSinkRecordHeader;
+
+import java.nio.ByteBuffer;
 import java.util.stream.Collectors;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericObject;
@@ -116,7 +118,9 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
     } else {
       if (o instanceof byte[]) {
         return new String((byte[]) o, UTF_8);
-      } else {
+      } if (o instanceof ByteBuffer) {
+        return new String(((ByteBuffer) o).array(), UTF_8);
+      }else {
         return o;
       }
     }

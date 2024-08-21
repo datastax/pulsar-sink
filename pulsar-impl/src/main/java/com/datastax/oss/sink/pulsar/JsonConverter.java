@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.nio.ByteBuffer;
 import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -65,6 +67,9 @@ public class JsonConverter {
       case BOOLEAN:
         return jsonNodeFactory.booleanNode((Boolean) value);
       case BYTES:
+        if (value instanceof ByteBuffer) {
+          return jsonNodeFactory.binaryNode(((ByteBuffer) value).array());
+        }
         return jsonNodeFactory.binaryNode((byte[]) value);
       case FIXED:
         return jsonNodeFactory.binaryNode(((GenericFixed) value).bytes());
