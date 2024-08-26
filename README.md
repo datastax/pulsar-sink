@@ -43,3 +43,4 @@ To do so please follow those steps:
 
 To see practical examples and usages of mapping, see:
 https://docs.datastax.com/en/pulsar-connector/docs/cfgPulsarMapTopicTable.html
+a
