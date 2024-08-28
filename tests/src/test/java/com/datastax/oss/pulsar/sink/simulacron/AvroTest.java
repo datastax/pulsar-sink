@@ -59,6 +59,15 @@ public class AvroTest extends PulsarCCMTestBase {
           ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
   private final List<MyUdt> listOfUdt = ImmutableList.of(pojoUdt, pojoUdt);
 
+  private final MyUdt pojoUdtWithNull =
+          new MyUdt(
+                  99,
+                  null,
+                  ImmutableList.of("l1", "l2"),
+                  ImmutableSet.of(3, 4),
+                  ImmutableMap.of("k1", 7.0D, "k2", 9.0D));
+  private final List<MyUdt> listOfUdtWithNull = ImmutableList.of(pojoUdtWithNull, pojoUdtWithNull);
+
   /**
    * AVRO schema with Pulsar doesn't work well with mixed value types on the map - the values will
    * be of "org.apache.avro.generic.GenericData$Record" with the following limitations: 1. Using
@@ -110,6 +119,26 @@ public class AvroTest extends PulsarCCMTestBase {
                   mapUdt,
                   listOfUdt))
           .send();
+      producer
+              .newMessage()
+              .key("838")
+              .value(
+                      new MyBean(
+                              "value1",
+                              map,
+                              list,
+                              set,
+                              listOfMaps,
+                              setOfMaps,
+                              mapOfLists,
+                              mapOfSets,
+                              listOfSets,
+                              setOfLists,
+                              pojoUdtWithNull,
+                              null,
+                              mapUdt,
+                              listOfUdtWithNull))
+              .send();
     }
     try {
       Awaitility.waitAtMost(30, TimeUnit.SECONDS)
@@ -117,7 +146,7 @@ public class AvroTest extends PulsarCCMTestBase {
           .until(
               () -> {
                 List<Row> results = session.execute("SELECT * FROM table1").all();
-                return results.size() > 0;
+                return results.size() > 0 && null == results.get(0).getUdtValue("f").getString("stringf");
               });
 
       List<Row> results = session.execute("SELECT * FROM table1").all();
@@ -156,14 +185,14 @@ public class AvroTest extends PulsarCCMTestBase {
 
         DefaultUdtValue value = (DefaultUdtValue) row.getUdtValue("f");
         assertEquals(value.size(), 5);
-        assertEquals(pojoUdt.getIntf(), value.getInt("intf"));
-        assertEquals(pojoUdt.getStringf(), value.getString("stringf"));
+        assertEquals(pojoUdtWithNull.getIntf(), value.getInt("intf"));
+        assertEquals(pojoUdtWithNull.getStringf(), value.getString("stringf"));
         GenericType<List<String>> udtListType = new GenericType<List<String>>() {};
-        assertEquals(pojoUdt.getListf(), value.get("listf", udtListType));
+        assertEquals(pojoUdtWithNull.getListf(), value.get("listf", udtListType));
         GenericType<Set<Integer>> udtSetType = new GenericType<Set<Integer>>() {};
-        assertEquals(pojoUdt.getSetf(), value.get("setf", udtSetType));
+        assertEquals(pojoUdtWithNull.getSetf(), value.get("setf", udtSetType));
         GenericType<Map<String, Double>> udtMapType = new GenericType<Map<String, Double>>() {};
-        assertEquals(pojoUdt.getMapf(), value.get("mapf", udtMapType));
+        assertEquals(pojoUdtWithNull.getMapf(), value.get("mapf", udtMapType));
 
         value = (DefaultUdtValue) row.getUdtValue("g");
         assertEquals(Integer.valueOf(mapUdt.get("intf").toString()), value.getInt("intf"));
@@ -174,11 +203,11 @@ public class AvroTest extends PulsarCCMTestBase {
         List<DefaultUdtValue> listOfUdt = row.get("s", listOfUdtType);
         assertEquals(listOfUdt.size(), 2);
         for (UdtValue udt : listOfUdt) {
-          assertEquals(pojoUdt.getIntf(), udt.getInt("intf"));
-          assertEquals(pojoUdt.getStringf(), udt.getString("stringf"));
-          assertEquals(pojoUdt.getListf(), udt.get("listf", udtListType));
-          assertEquals(pojoUdt.getSetf(), udt.get("setf", udtSetType));
-          assertEquals(pojoUdt.getMapf(), udt.get("mapf", udtMapType));
+          assertEquals(pojoUdtWithNull.getIntf(), udt.getInt("intf"));
+          assertEquals(pojoUdtWithNull.getStringf(), udt.getString("stringf"));
+          assertEquals(pojoUdtWithNull.getListf(), udt.get("listf", udtListType));
+          assertEquals(pojoUdtWithNull.getSetf(), udt.get("setf", udtSetType));
+          assertEquals(pojoUdtWithNull.getMapf(), udt.get("mapf", udtMapType));
         }
       }
       assertEquals(1, results.size());
