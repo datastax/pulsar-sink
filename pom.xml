@@ -67,7 +67,7 @@
     <snappy.version>1.1.7.2</snappy.version>
     <jackson.version>2.13.4.20221013</jackson.version>
     <jnr.version>3.1.15</jnr.version>
-    <avro.version>1.10.2</avro.version>
+    <avro.version>1.11.4</avro.version>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <kafka-clients.version>3.4.0</kafka-clients.version>
   </properties>
