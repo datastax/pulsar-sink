@@ -17,7 +17,6 @@ package com.datastax.oss.sink.pulsar;
 
 import com.datastax.oss.common.sink.AbstractField;
 import com.datastax.oss.common.sink.AbstractSchema;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
