@@ -98,6 +98,17 @@ public class PulsarStruct implements AbstractStruct {
               .getField(fieldName)
               .schema();
       field = new AvroContainerTypeRecord(JsonConverter.toJson(schema, field));
+    } else if (field instanceof GenericRecord) {
+      // Check if this is a tuple record (follows CDC naming convention: Tuple_<hashcode>)
+      GenericRecord genericRecord = (GenericRecord) field;
+      if (genericRecord.getNativeObject() instanceof org.apache.avro.generic.GenericRecord) {
+        org.apache.avro.generic.GenericRecord avroRecord =
+            (org.apache.avro.generic.GenericRecord) genericRecord.getNativeObject();
+        if (avroRecord.getSchema().getName().startsWith("Tuple_")) {
+          // Wrap tuple as PulsarStruct for codec processing
+          return wrap(this, fieldName, field, schemaRegistry);
+        }
+      }
     }
 
     return wrap(this, fieldName, field, schemaRegistry);
