@@ -17,6 +17,7 @@ package com.datastax.oss.sink.pulsar;
 
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DECIMAL;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DURATION;
+import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_TUPLE;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_VARINT;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.DATE;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIMESTAMP_MILLIS;
@@ -220,11 +221,13 @@ public final class AvroTypeUtil {
       LogicalTypes.register(CQL_DECIMAL, schema -> new CqlLogicalTypes.CqlDecimalLogicalType());
       LogicalTypes.register(CQL_DURATION, schema -> new CqlLogicalTypes.CqlDurationLogicalType());
       LogicalTypes.register(CQL_VARINT, schema -> new CqlLogicalTypes.CqlVarintLogicalType());
+      LogicalTypes.register(CQL_TUPLE, schema -> new CqlLogicalTypes.CqlTupleLogicalType());
 
       // Register logical type converters
       logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
       logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
       logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
+      logicalTypeConverters.put(CQL_TUPLE, new CqlLogicalTypes.CqlTupleConversion());
       logicalTypeConverters.put(DATE, new CqlLogicalTypes.DateConversion());
       logicalTypeConverters.put(TIME_MICROS, new CqlLogicalTypes.TimeConversion());
       logicalTypeConverters.put(TIMESTAMP_MILLIS, new CqlLogicalTypes.TimestampConversion());
@@ -235,6 +238,7 @@ public final class AvroTypeUtil {
       logicalTypeConverters.remove(CQL_DECIMAL);
       logicalTypeConverters.remove(CQL_DURATION);
       logicalTypeConverters.remove(CQL_VARINT);
+      logicalTypeConverters.remove(CQL_TUPLE);
       logicalTypeConverters.remove(DATE);
       logicalTypeConverters.remove(TIME_MICROS);
       logicalTypeConverters.remove(TIMESTAMP_MILLIS);

@@ -32,10 +32,30 @@ public class CqlLogicalTypes {
   public static final String CQL_VARINT = "cql_varint";
   public static final String CQL_DECIMAL = "cql_decimal";
   public static final String CQL_DURATION = "cql_duration";
+  public static final String CQL_TUPLE = "cql_tuple";
 
   public static final String DATE = LogicalTypes.date().getName();
   public static final String TIME_MICROS = LogicalTypes.timeMicros().getName();
   public static final String TIMESTAMP_MILLIS = LogicalTypes.timestampMillis().getName();
+
+  public static class CqlTupleConversion extends Conversion<IndexedRecord> {
+    @Override
+    public Class<IndexedRecord> getConvertedType() {
+      return IndexedRecord.class;
+    }
+
+    @Override
+    public String getLogicalTypeName() {
+      return CQL_TUPLE;
+    }
+
+    @Override
+    public IndexedRecord fromRecord(IndexedRecord value, Schema schema, LogicalType type) {
+      // For tuple support, we return the IndexedRecord as-is
+      // The actual conversion to TupleValue will be handled by StructToTupleCodec
+      return value;
+    }
+  }
 
   public static class CqlDurationConversion extends Conversion<CqlDuration> {
     @Override
@@ -163,6 +183,12 @@ public class CqlLogicalTypes {
   static class CqlVarintLogicalType extends LogicalType {
     public CqlVarintLogicalType() {
       super(CQL_VARINT);
+    }
+  }
+
+  static class CqlTupleLogicalType extends LogicalType {
+    public CqlTupleLogicalType() {
+      super(CQL_TUPLE);
     }
   }
 }
