@@ -15,6 +15,7 @@
  */
 package com.datastax.oss.pulsar.sink.codecs;
 
+import com.datastax.oss.common.sink.AbstractField;
 import com.datastax.oss.common.sink.AbstractSchema;
 import com.datastax.oss.common.sink.record.StructDataMetadata;
 import com.datastax.oss.driver.api.core.data.TupleValue;
@@ -25,6 +26,8 @@ import com.datastax.oss.dsbulk.codecs.api.ConvertingCodec;
 import com.datastax.oss.dsbulk.codecs.api.ConvertingCodecFactory;
 import com.datastax.oss.sink.pulsar.PulsarStruct;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Codec to convert a Pulsar Struct to a CQL Tuple. */
 public class StructToTupleCodec extends ConvertingCodec<PulsarStruct, TupleValue> {
@@ -48,6 +51,14 @@ public class StructToTupleCodec extends ConvertingCodec<PulsarStruct, TupleValue
     int size = componentTypes.size();
     AbstractSchema schema = external.schema();
     StructDataMetadata structMetadata = new StructDataMetadata(schema);
+
+    Set<String> structFieldNames =
+            schema.fields().stream().map(AbstractField::name).collect(Collectors.toSet());
+
+    if (structFieldNames.size() != size) {
+      throw new IllegalArgumentException(
+              String.format("Expecting %d tuple fields, got %d", size, structFieldNames.size()));
+    }
 
     TupleValue tupleValue = tupleType.newValue();
 
