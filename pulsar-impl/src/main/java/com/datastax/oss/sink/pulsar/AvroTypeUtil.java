@@ -34,6 +34,8 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class AvroTypeUtil {
 
@@ -41,7 +43,7 @@ public final class AvroTypeUtil {
   private static boolean decodeCDCDataTypes;
 
   private AvroTypeUtil() {}
-
+  private static final Logger log = LoggerFactory.getLogger(AvroTypeUtil.class);
   public static boolean shouldWrapAvroType(GenericRecord record, Object fieldValue) {
     return record != null && record.getSchemaType() == SchemaType.AVRO && isMapOrList(fieldValue);
   }
@@ -82,15 +84,18 @@ public final class AvroTypeUtil {
     if (fieldValue == null) {
       return null; // logical types are optional
     }
+    log.info("Field value {} and string value {}", fieldValue, fieldValue.toString());
     return getLogicalType(record, fieldName)
         .map(
             logicalType -> {
+              log.info("Logical type : {}", logicalType.getName());
               if (isVarint(logicalType)) {
                 return logicalTypeConverters
                     .get(CQL_VARINT)
                     .fromBytes((ByteBuffer) fieldValue, null, null)
                     .toString();
               } else if (isDate(logicalType)) {
+                log.info("-----Date logical type handling------");
                 return logicalTypeConverters
                     .get(DATE)
                     .fromInt((int) fieldValue, null, null)
@@ -106,6 +111,7 @@ public final class AvroTypeUtil {
                     .fromLong((long) fieldValue, null, null)
                     .toString();
               }
+              log.info("------------Record logical type handling-------------");
               return fieldValue instanceof GenericRecord
                       && ((GenericRecord) fieldValue).getNativeObject() instanceof IndexedRecord
                       && logicalTypeConverters.containsKey(logicalType.getName())
