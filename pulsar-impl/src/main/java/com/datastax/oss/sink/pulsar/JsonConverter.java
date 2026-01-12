@@ -26,11 +26,14 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericFixed;
 import org.apache.avro.generic.GenericRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Convert an AVRO GenericRecord to a JsonNode. */
 public class JsonConverter {
 
   private static final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
+  private static final Logger log = LoggerFactory.getLogger(JsonConverter.class);
 
   public static JsonNode toJson(GenericRecord genericRecord) {
     if (genericRecord == null) {
@@ -47,7 +50,8 @@ public class JsonConverter {
     if (value == null) {
       return jsonNodeFactory.nullNode();
     }
-
+    log.info("----------Converting to json-------");
+    log.info("Schema name {}", schema.getName());
     if (AvroTypeUtil.shouldHandleCassandraCDCLogicalType(schema)) {
       value = AvroTypeUtil.handleCassandraCDCLogicalType(value, schema);
       if (value instanceof String) {
@@ -57,6 +61,7 @@ public class JsonConverter {
 
     switch (schema.getType()) {
       case INT:
+        log.info("---------Coming as int--------");
         return jsonNodeFactory.numberNode((Integer) value);
       case LONG:
         return jsonNodeFactory.numberNode((Long) value);
@@ -106,6 +111,7 @@ public class JsonConverter {
           return objectNode;
         }
       case RECORD:
+        log.info("--------Coming as record--------");
         return toJson((GenericRecord) value);
       case UNION:
         for (Schema s : schema.getTypes()) {

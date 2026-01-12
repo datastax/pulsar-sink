@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a local cache of PulsarSchema. Unfortunately Pulsar does not return information about the
@@ -27,6 +29,7 @@ import org.apache.pulsar.functions.api.Record;
  */
 public class LocalSchemaRegistry {
 
+  private static final Logger log = LoggerFactory.getLogger(LocalSchemaRegistry.class);
   private final ConcurrentHashMap<String, PulsarSchema> registry = new ConcurrentHashMap<>();
 
   public PulsarSchema ensureAndUpdateSchemaFromStruct(Record<?> struct) {
@@ -47,20 +50,26 @@ public class LocalSchemaRegistry {
     } // we using as key the fully qualified topic name + string (JSON) representation of the schema
     // this way we are supporting schema evolution easily
     String path = topicName.orElse(null) + "_" + schemaDef;
+    log.info("Registering schema {}", schemaDef);
     return path;
   }
 
   public PulsarSchema ensureAndUpdateSchema(String path, Object value) {
     if (value instanceof GenericRecord) {
       GenericRecord struct = (GenericRecord) value;
+      log.info("Struct {}", struct.getFields());
       PulsarSchema res = registry.get(path);
+      log.info("Path {}", path);
       if (res == null) {
+        log.info("-------Res is null-------");
         res = PulsarSchema.createFromStruct(path, struct, this);
         registry.put(path, res);
       } else {
         // need to recover nulls from previous records
         res.update(path, struct, this);
       }
+      log.info("REsult after ensure and update {}", res.type().getName());
+      log.info("REsult {}", res.fields());
       return res;
     } else {
       // primitive values

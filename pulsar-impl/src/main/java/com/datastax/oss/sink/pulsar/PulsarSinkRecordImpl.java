@@ -29,10 +29,13 @@ import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.client.api.schema.KeyValueSchema;
 import org.apache.pulsar.common.schema.KeyValue;
 import org.apache.pulsar.functions.api.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** @author enrico.olivelli */
 public class PulsarSinkRecordImpl implements AbstractSinkRecord {
   private static final String PARTITIONED_TOPIC_SUFFIX = "-partition-";
+  private static final Logger log = LoggerFactory.getLogger(PulsarSinkRecordImpl.class);
   private final Record<?> record;
   private final Object key;
   private final Schema keySchema;
@@ -112,13 +115,22 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
   }
 
   private Object unwrap(Object o, Schema schema) {
+    log.info("------In unwrap schemRegistry {}-----------", schemaRegistry.toString());
     if (o instanceof GenericRecord) {
+      log.info(
+          "Got record schema info{} and class {}",
+          schema.getSchemaInfo(),
+          schema.getClass());
       return PulsarStruct.ofRecord(
           (GenericRecord) o, schema, record.getTopicName(), record.getEventTime(), schemaRegistry);
     } else {
       if (o instanceof byte[]) {
+        log.info("--------Got schema type byte-----------");
         return new String((byte[]) o, UTF_8);
       } if (o instanceof ByteBuffer) {
+      }
+      if (o instanceof ByteBuffer) {
+        log.info("--------Got schema type byte buffer-----------");
         return new String(((ByteBuffer) o).array(), UTF_8);
       }else {
         return o;
@@ -128,11 +140,13 @@ public class PulsarSinkRecordImpl implements AbstractSinkRecord {
 
   @Override
   public Object key() {
+    log.info("------------Will be unwrapping key --------");
     return unwrap(key, keySchema);
   }
 
   @Override
   public Object value() {
+    log.info("------------Will be unwrapping value --------");
     return unwrap(value, valueSchema);
   }
 

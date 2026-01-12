@@ -22,6 +22,8 @@ import java.util.Optional;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.schema.GenericRecord;
 import org.apache.pulsar.functions.api.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Wrapper for Pulsar GenericRecord. */
 public class PulsarStruct implements AbstractStruct {
@@ -31,6 +33,8 @@ public class PulsarStruct implements AbstractStruct {
   private final PulsarSchema schema;
   private final String path;
   private final LocalSchemaRegistry schemaRegistry;
+
+  private static final Logger log = LoggerFactory.getLogger(PulsarStruct.class);
 
   public static Object wrap(
       PulsarStruct parent, String fieldName, Object o, LocalSchemaRegistry schemaRegistry) {
@@ -64,8 +68,10 @@ public class PulsarStruct implements AbstractStruct {
       Optional<String> topicName,
       Optional<Long> eventTime,
       LocalSchemaRegistry schemaRegistry) {
+    log.info("-------of Record method -------");
     String path = LocalSchemaRegistry.computeRecordSchemaPath(schema, topicName);
     PulsarSchema pulsarSchema = schemaRegistry.ensureAndUpdateSchema(path, value);
+    log.info("------Registry work done------");
     return new PulsarStruct(value, eventTime, pulsarSchema, path, schemaRegistry);
   }
 
