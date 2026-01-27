@@ -105,7 +105,16 @@ public class JsonConverter {
           return objectNode;
         }
       case RECORD:
-        return toJson((GenericRecord) value);
+        org.apache.avro.generic.GenericRecord avroRecord =
+            (org.apache.avro.generic.GenericRecord) value;
+        // Check if this is a tuple record (follows CDC naming convention: Tuple_<hashcode>)
+        // Tuples should not be converted to JSON objects; they need to remain as GenericRecords
+        // for proper codec processing
+        if (isTupleRecord(avroRecord)) {
+          // Convert tuple to array representation for proper codec processing
+          return createTupleArrayNode(avroRecord);
+        }
+        return toJson(avroRecord);
       case UNION:
         for (Schema s : schema.getTypes()) {
           if (s.getType() == Schema.Type.NULL) {
@@ -116,5 +125,45 @@ public class JsonConverter {
       default:
         return jsonNodeFactory.nullNode();
     }
+  }
+
+  /**
+   * Check if an Avro GenericRecord represents a tuple by examining its schema name. Tuples follow
+   * the CDC naming convention: Tuple_<hashcode>
+   */
+  private static boolean isTupleRecord(org.apache.avro.generic.GenericRecord record) {
+    if (record == null) {
+      return false;
+    }
+    return record.getSchema().getName().startsWith("Tuple_");
+  }
+
+  /**
+   * Convert a tuple GenericRecord to an ArrayNode representation. Tuples have positional fields
+   * (index_0, index_1, etc.) that should be represented as an array for proper codec processing.
+   */
+  private static JsonNode createTupleArrayNode(org.apache.avro.generic.GenericRecord record) {
+    if (record == null) {
+      return jsonNodeFactory.nullNode();
+    }
+
+    ArrayNode arrayNode = jsonNodeFactory.arrayNode();
+
+    // Tuple fields are named index_0, index_1, index_2, etc.
+    // Extract them in order
+    int index = 0;
+    while (true) {
+      String fieldName = "index_" + index;
+      Schema.Field field = record.getSchema().getField(fieldName);
+      if (field == null) {
+        break; // No more fields
+      }
+      Object fieldValue = record.get(fieldName);
+      JsonNode jsonValue = toJson(field.schema(), fieldValue);
+      arrayNode.add(jsonValue);
+      index++;
+    }
+
+    return arrayNode;
   }
 }
