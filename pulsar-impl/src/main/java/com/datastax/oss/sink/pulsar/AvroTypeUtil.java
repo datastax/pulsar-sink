@@ -17,6 +17,7 @@ package com.datastax.oss.sink.pulsar;
 
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DECIMAL;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_DURATION;
+import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_TUPLE;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.CQL_VARINT;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.DATE;
 import static com.datastax.oss.sink.pulsar.CqlLogicalTypes.TIMESTAMP_MILLIS;
@@ -220,11 +221,13 @@ public final class AvroTypeUtil {
       LogicalTypes.register(CQL_DECIMAL, schema -> new CqlLogicalTypes.CqlDecimalLogicalType());
       LogicalTypes.register(CQL_DURATION, schema -> new CqlLogicalTypes.CqlDurationLogicalType());
       LogicalTypes.register(CQL_VARINT, schema -> new CqlLogicalTypes.CqlVarintLogicalType());
+      LogicalTypes.register(CQL_TUPLE, schema -> new CqlLogicalTypes.CqlTupleLogicalType());
 
       // Register logical type converters
       logicalTypeConverters.put(CQL_DECIMAL, new CqlLogicalTypes.CqlDecimalConversion());
       logicalTypeConverters.put(CQL_DURATION, new CqlLogicalTypes.CqlDurationConversion());
       logicalTypeConverters.put(CQL_VARINT, new CqlLogicalTypes.CqlVarintConversion());
+      logicalTypeConverters.put(CQL_TUPLE, new CqlLogicalTypes.CqlTupleConversion());
       logicalTypeConverters.put(DATE, new CqlLogicalTypes.DateConversion());
       logicalTypeConverters.put(TIME_MICROS, new CqlLogicalTypes.TimeConversion());
       logicalTypeConverters.put(TIMESTAMP_MILLIS, new CqlLogicalTypes.TimestampConversion());
@@ -235,11 +238,68 @@ public final class AvroTypeUtil {
       logicalTypeConverters.remove(CQL_DECIMAL);
       logicalTypeConverters.remove(CQL_DURATION);
       logicalTypeConverters.remove(CQL_VARINT);
+      logicalTypeConverters.remove(CQL_TUPLE);
       logicalTypeConverters.remove(DATE);
       logicalTypeConverters.remove(TIME_MICROS);
       logicalTypeConverters.remove(TIMESTAMP_MILLIS);
     }
 
     AvroTypeUtil.decodeCDCDataTypes = decodeCDCDataTypes;
+  }
+
+  /**
+   * Check if a GenericRecord represents a tuple by examining its schema name. Tuples follow the CDC
+   * naming convention: Tuple_<hashcode>
+   */
+  public static boolean isTupleRecord(GenericRecord record) {
+    if (record == null) {
+      return false;
+    }
+    Object nativeObject = record.getNativeObject();
+    if (nativeObject instanceof org.apache.avro.generic.GenericRecord) {
+      org.apache.avro.generic.GenericRecord avroRecord =
+          (org.apache.avro.generic.GenericRecord) nativeObject;
+      return avroRecord.getSchema().getName().startsWith("Tuple_");
+    }
+    return false;
+  }
+
+  /** Check if an Avro schema represents a tuple type. */
+  public static boolean isTupleSchema(Schema schema) {
+    if (schema == null) {
+      return false;
+    }
+    // Handle union types
+    if (schema.isUnion()) {
+      return schema
+          .getTypes()
+          .stream()
+          .anyMatch(s -> s.getType() == Schema.Type.RECORD && s.getName().startsWith("Tuple_"));
+    }
+    // Handle direct record types
+    return schema.getType() == Schema.Type.RECORD && schema.getName().startsWith("Tuple_");
+  }
+
+  /**
+   * Check if a schema contains tuple types in its structure. This checks maps, arrays, and nested
+   * structures.
+   */
+  public static boolean containsTuples(Schema schema) {
+    if (schema == null) {
+      return false;
+    }
+
+    switch (schema.getType()) {
+      case RECORD:
+        return schema.getName().startsWith("Tuple_");
+      case ARRAY:
+        return containsTuples(schema.getElementType());
+      case MAP:
+        return containsTuples(schema.getValueType());
+      case UNION:
+        return schema.getTypes().stream().anyMatch(AvroTypeUtil::containsTuples);
+      default:
+        return false;
+    }
   }
 }
