@@ -17,6 +17,7 @@ package com.datastax.oss.pulsar.sink.codecs;
 
 import com.datastax.oss.common.sink.AbstractStruct;
 import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.dsbulk.codecs.api.ConvertingCodec;
@@ -36,6 +37,14 @@ public class PulsarCodecProvider implements ConvertingCodecProvider {
       @NonNull GenericType<?> externalJavaType,
       @NonNull ConvertingCodecFactory codecFactory,
       boolean rootCodec) {
+    // Handle Tuple types
+    if (cqlType instanceof TupleType
+        && (externalJavaType.equals(GenericType.of(PulsarStruct.class))
+            || externalJavaType.equals(GenericType.of(AbstractStruct.class)))) {
+      return Optional.of(new StructToTupleCodec(codecFactory, (TupleType) cqlType));
+    }
+
+    // Handle UDT types
     if (cqlType instanceof UserDefinedType
         && (externalJavaType.equals(GenericType.of(PulsarStruct.class))
             || externalJavaType.equals(GenericType.of(AbstractStruct.class)))) {
