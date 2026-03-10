@@ -26,6 +26,7 @@
   <description>A Pulsar Sink Connector for pulling data from Apache Pulsar and inserting into Apache Cassandra (R) or DataStax Enterprise (DSE)</description>
   <url>https://github.com/datastax/pulsar-sink</url>
   <inceptionYear>2020</inceptionYear>
+  <!-- Extra comment -->
   <organization>
     <name>DataStax</name>
     <url>http://www.datastax.com</url>
