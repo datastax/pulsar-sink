@@ -93,12 +93,18 @@ jobs:
           pip install ccm
       - name: Verify CCM installation
         run: |
-          echo "===== CCM INFO ====="
+          echo "===== CCM PATH ====="
           which ccm
-          ccm --version
+
+          echo "===== CCM HELP ====="
+          ccm help | head -n 20 || true
+
           echo "===== PYTHON ====="
           python --version
           pip --version
+
+          echo "===== JAVA ====="
+          java -version
       - name: Cache local Maven repository
         uses: actions/cache@v5
         with:
