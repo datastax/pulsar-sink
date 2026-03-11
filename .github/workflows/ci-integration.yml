@@ -91,6 +91,14 @@ jobs:
         run: |
           #!/bin/bash
           pip install ccm
+      - name: Verify CCM installation
+        run: |
+          echo "===== CCM INFO ====="
+          which ccm
+          ccm --version
+          echo "===== PYTHON ====="
+          python --version
+          pip --version
       - name: Cache local Maven repository
         uses: actions/cache@v5
         with:
@@ -101,7 +109,17 @@ jobs:
 
       - name: Build with JDK 11
         run: mvn -B clean install -DskipTests
-
+      - name: Print CCM env
+        run: |
+          echo "===== CCM ENV ====="
+          env | grep CCM || true
+      - name: Debug DSE CCM creation
+        if: ${{ matrix.cassandra.is_dse }}
+        run: |
+          set -x
+          echo "Testing CCM cluster creation"
+          ccm create test -i 127.0.0.1 -n 1 -v ${{ matrix.cassandra.ccm_version }} --dse || true
+          ccm remove test || true
       - name: Run integration tests (pulsar-impl)
         run: |
           set -e
