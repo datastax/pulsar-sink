@@ -119,6 +119,25 @@ jobs:
         run: |
           echo "===== CCM ENV ====="
           env | grep CCM || true
+      - name: Configure CCM for DSE
+        if: ${{ matrix.cassandra.is_dse }}
+        env:
+          DSE_USERNAME: ${{ secrets.DSE_USERNAME }}
+          DSE_PASSWORD: ${{ secrets.DSE_PASSWORD }}
+        run: |
+          mkdir -p ~/.ccm
+
+          cat <<EOF > ~/.ccm/config
+          [repositories]
+          dse = https://downloads-staging.datastax.com/enterprise/dse-%s-bin.tar.gz
+    
+          [dse_credentials]
+          username = $DSE_USERNAME
+          password = $DSE_PASSWORD
+          EOF
+          
+          echo "===== CCM CONFIG ====="
+          cat ~/.ccm/config
       - name: Debug DSE CCM creation
         if: ${{ matrix.cassandra.is_dse }}
         run: |
@@ -141,6 +160,8 @@ jobs:
             export CCM_SERVER_TYPE=dse
             export CCM_IS_DSE=true
             export DSE_VERSION=${{ matrix.cassandra.ccm_version }}
+            export DSE_USERNAME=${{ secrets.DSE_USERNAME }}
+            export DSE_PASSWORD=${{ secrets.DSE_PASSWORD }}
           else
             export CCM_SERVER_TYPE=cassandra
             export CCM_IS_DSE=false
@@ -173,6 +194,8 @@ jobs:
             export CCM_SERVER_TYPE=dse
             export CCM_IS_DSE=true
             export DSE_VERSION=${{ matrix.cassandra.ccm_version }}
+            export DSE_USERNAME=${{ secrets.DSE_USERNAME }}
+            export DSE_PASSWORD=${{ secrets.DSE_PASSWORD }}
           else
             export CCM_SERVER_TYPE=cassandra
             export CCM_IS_DSE=false
