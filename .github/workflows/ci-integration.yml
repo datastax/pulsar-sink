@@ -160,8 +160,8 @@ jobs:
             export CCM_SERVER_TYPE=dse
             export CCM_IS_DSE=true
             export DSE_VERSION=${{ matrix.cassandra.ccm_version }}
-            export DSE_USERNAME=${{ secrets.DSE_USERNAME }}
-            export DSE_PASSWORD=${{ secrets.DSE_PASSWORD }}
+            export CCM_DSE_USERNAME=${{ secrets.DSE_USERNAME }}
+            export CCM_DSE_PASSWORD=${{ secrets.DSE_PASSWORD }}
           else
             export CCM_SERVER_TYPE=cassandra
             export CCM_IS_DSE=false
@@ -194,8 +194,8 @@ jobs:
             export CCM_SERVER_TYPE=dse
             export CCM_IS_DSE=true
             export DSE_VERSION=${{ matrix.cassandra.ccm_version }}
-            export DSE_USERNAME=${{ secrets.DSE_USERNAME }}
-            export DSE_PASSWORD=${{ secrets.DSE_PASSWORD }}
+            export CCM_DSE_USERNAME=${{ secrets.DSE_USERNAME }}
+            export CCM_DSE_PASSWORD=${{ secrets.DSE_PASSWORD }}
           else
             export CCM_SERVER_TYPE=cassandra
             export CCM_IS_DSE=false
