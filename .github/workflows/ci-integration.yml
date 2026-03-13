@@ -130,7 +130,9 @@ jobs:
           cat <<EOF > ~/.ccm/config
           [repositories]
           dse = https://downloads-staging.datastax.com/enterprise/dse-%s-bin.tar.gz
-    
+          EOF
+          
+          cat <<EOF > ~/.ccm/.dse.ini
           [dse_credentials]
           username = $DSE_USERNAME
           password = $DSE_PASSWORD
@@ -138,6 +140,8 @@ jobs:
           
           echo "===== CCM CONFIG ====="
           cat ~/.ccm/config
+          echo "===== CCM DSE CREDENTIALS ====="
+          cat ~/.ccm/.dse.ini
       - name: Debug DSE CCM creation
         if: ${{ matrix.cassandra.is_dse }}
         run: |
