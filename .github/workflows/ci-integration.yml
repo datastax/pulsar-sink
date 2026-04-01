@@ -129,7 +129,7 @@ jobs:
 
           cat <<EOF > ~/.ccm/config
           [repositories]
-          dse = https://downloads-staging.datastax.com/enterprise/dse-%s-bin.tar.gz
+          dse = https://na.artifactory.swg-devops.com/artifactory/datastax-team-dse-packages-release-generic-local/dse-%s-bin.tar.gz
           EOF
           
           cat <<EOF > ~/.ccm/.dse.ini
