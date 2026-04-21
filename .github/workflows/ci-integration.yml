@@ -134,8 +134,8 @@ jobs:
           
           cat <<EOF > ~/.ccm/.dse.ini
           [dse_credentials]
-          username = $DSE_USERNAME
-          password = $DSE_PASSWORD
+          dse_username = $DSE_USERNAME
+          dse_password = $DSE_PASSWORD
           EOF
           
           echo "===== CCM CONFIG ====="
