@@ -86,7 +86,7 @@ jobs:
       - name: Setup CCM private
         if: ${{ matrix.cassandra.is_dse }}
         env:
-          CLONE_RIPTANO_CCM_SECRET: ${{secrets.generate-token.outputs.token}}
+          CLONE_RIPTANO_CCM_SECRET: ${{ steps.generate-token.outputs.token }}
         run: |
           #!/bin/bash
           set -e
