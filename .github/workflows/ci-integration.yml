@@ -74,17 +74,28 @@ jobs:
           cache: 'pip'
           allow-build: info
           cache-build: true
+      - name: Generate installation token for CCM private
+        if: ${{ matrix.cassandra.is_dse }}
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RIPTANO_CCM_PRIVATE_APP_ID }}
+          private-key: ${{ secrets.RIPTANO_CCM_APP_PRIVATE_KEY }}
+          owner: riptano
+          repositories: ccm-private
       - name: Setup CCM private
         if: ${{ matrix.cassandra.is_dse }}
         env:
-          CLONE_RIPTANO_CCM_SECRET: ${{secrets.CLONE_RIPTANO_CCM_SECRET}}
+          CLONE_RIPTANO_CCM_SECRET: ${{ steps.generate-token.outputs.token }}
         run: |
           #!/bin/bash
           set -e
-          git clone https://${CLONE_RIPTANO_CCM_SECRET}@github.com/riptano/ccm-private.git
+          echo "Cloning the repo"
+          git clone https://x-access-token:${CLONE_RIPTANO_CCM_SECRET}@github.com/riptano/ccm-private.git
           cd ccm-private
-          
+          echo "pip install requirements"
           pip install -r requirements.txt
+          echo "setup.py install"
           ./setup.py install
       - name: Setup CCM
         if: ${{ !matrix.cassandra.is_dse }}
@@ -101,7 +112,24 @@ jobs:
 
       - name: Build with JDK 11
         run: mvn -B clean install -DskipTests
+      - name: Configure CCM for DSE
+        if: ${{ matrix.cassandra.is_dse }}
+        env:
+          DSE_USERNAME: ${{ secrets.DSE_USERNAME }}
+          DSE_PASSWORD: ${{ secrets.DSE_PASSWORD }}
+        run: |
+          mkdir -p ~/.ccm
 
+          cat <<EOF > ~/.ccm/config
+          [repositories]
+          dse = https://na.artifactory.swg-devops.com/artifactory/datastax-team-dse-packages-release-generic-local/dse-%s-bin.tar.gz
+          EOF
+          
+          cat <<EOF > ~/.ccm/.dse.ini
+          [dse_credentials]
+          dse_username = $DSE_USERNAME
+          dse_password = $DSE_PASSWORD
+          EOF
       - name: Run integration tests (pulsar-impl)
         run: |
           set -e
