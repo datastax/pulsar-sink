@@ -69,8 +69,8 @@
     <jnr.version>3.1.15</jnr.version>
     <avro.version>1.11.4</avro.version>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-    <kafka-clients.version>3.9.1</kafka-clients.version>
-    <jackson-core.version>2.21.1</jackson-core.version>
+    <kafka-clients.version>3.9.2</kafka-clients.version>
+    <jackson-core.version>2.21.2</jackson-core.version>
     <asynchttpclient.version>2.12.4</asynchttpclient.version>
     <aircompressor.version>0.27</aircompressor.version>
   </properties>
