@@ -77,7 +77,7 @@ jobs:
       - name: Generate installation token for CCM private
         if: ${{ matrix.cassandra.is_dse }}
         id: generate-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.RIPTANO_CCM_PRIVATE_APP_ID }}
           private-key: ${{ secrets.RIPTANO_CCM_APP_PRIVATE_KEY }}
